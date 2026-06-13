@@ -116,6 +116,13 @@ aserciones de tests (ADR-006).
 - Inyección por **token string** para los puertos (ej. `USER_REPOSITORY`, `EMAIL_NOTIFIER`,
   `REDIS_CLIENT`), `useClass`/`useFactory` a los adapters. Tests overridean con fakes en memoria —
   **no** levantan Postgres/Redis reales (excepto tests de integración marcados).
+- **`isolatedModules` + `emitDecoratorMetadata` → interfaces en `@Inject()` van como `import type`
+  (TS1272).** Una interfaz importada como valor y usada en un parámetro de constructor decorado
+  rompe `nest build` (los tests con ts-jest NO lo detectan — transpilan lento). Importá el token
+  como valor y la interfaz con el modificador `type`:
+  `import { USER_REPOSITORY, type IUserRepository } from '...'`. El DI sigue funcionando porque
+  `@Inject(TOKEN)` resuelve por el token, no por la metadata del tipo. El CI corre `npm run build`
+  justo para gatear esto.
 - TypeORM `synchronize: true` solo cuando `NODE_ENV !== 'production'`.
 
 ---
