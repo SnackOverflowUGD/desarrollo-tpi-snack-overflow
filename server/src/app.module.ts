@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { PasswordResetToken } from './auth/domain/password-reset-token.entity.js';
+import { RegulatedTrade } from './auth/domain/regulated-trade.entity.js';
 import { User } from './auth/domain/user.entity.js';
 
 @Module({
@@ -15,7 +16,7 @@ import { User } from './auth/domain/user.entity.js';
       username: process.env.DB_USER ?? 'snack_user',
       password: process.env.DB_PASSWORD ?? 'snack_password',
       database: process.env.DB_NAME ?? 'snack_overflow',
-      entities: [User, PasswordResetToken],
+      entities: [User, PasswordResetToken, RegulatedTrade],
       // synchronize only for development — disable in production
       synchronize: process.env.NODE_ENV !== 'production',
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,

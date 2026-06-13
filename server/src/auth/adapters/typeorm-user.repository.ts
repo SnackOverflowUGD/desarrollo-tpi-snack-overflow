@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../domain/user.entity.js';
-import { IUserRepository } from '../ports/user.repository.port.js';
+import { CreateUserData, IUserRepository } from '../ports/user.repository.port.js';
 
 @Injectable()
 export class TypeOrmUserRepository implements IUserRepository {
@@ -21,5 +21,9 @@ export class TypeOrmUserRepository implements IUserRepository {
 
   async updatePasswordHash(userId: string, newHash: string): Promise<void> {
     await this.repo.update({ id: userId }, { passwordHash: newHash });
+  }
+
+  async create(data: CreateUserData): Promise<User> {
+    return this.repo.save(data);
   }
 }

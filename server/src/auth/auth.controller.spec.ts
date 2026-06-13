@@ -15,17 +15,21 @@ import * as crypto from 'crypto';
 
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './application/auth.service.js';
+import { RegistrationService } from './application/registration.service.js';
 import { PasswordResetToken } from './domain/password-reset-token.entity.js';
 import { ProviderStatus } from './domain/provider-status.enum.js';
+import { RegulatedTrade } from './domain/regulated-trade.entity.js';
 import { UserRole } from './domain/user-role.enum.js';
 import { UserStatus } from './domain/user-status.enum.js';
 import { User } from './domain/user.entity.js';
 import { ATTEMPT_STORE } from './ports/attempt-store.port.js';
 import { EMAIL_NOTIFIER } from './ports/email-notifier.port.js';
+import { REGULATED_TRADE_REPOSITORY } from './ports/regulated-trade.repository.port.js';
 import { TOKEN_STORE } from './ports/token-store.port.js';
 import { USER_REPOSITORY } from './ports/user.repository.port.js';
 import type { IAttemptStore } from './ports/attempt-store.port.js';
 import type { IEmailNotifier } from './ports/email-notifier.port.js';
+import type { IRegulatedTradeRepository } from './ports/regulated-trade.repository.port.js';
 import type { ITokenStore } from './ports/token-store.port.js';
 import type { IUserRepository } from './ports/user.repository.port.js';
 
@@ -58,6 +62,24 @@ class FakeUserRepo implements IUserRepository {
         return;
       }
     }
+  }
+
+  async create(data: any): Promise<User> {
+    const user = {
+      id: crypto.randomUUID(),
+      name: data.name,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      passwordHash: data.passwordHash,
+      role: data.role,
+      status: data.status,
+      providerStatus: data.providerStatus,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as User;
+    this.store.set(user.email.toLowerCase(), user);
+    return user;
   }
 }
 
@@ -140,6 +162,18 @@ class FakeEmailNotifier implements IEmailNotifier {
   }
 }
 
+class FakeRegulatedTradeRepo implements IRegulatedTradeRepository {
+  private trades = new Map<string, RegulatedTrade>();
+
+  seed(trade: RegulatedTrade) {
+    this.trades.set(trade.tradeName, trade);
+  }
+
+  async findByTradeName(tradeName: string): Promise<RegulatedTrade | null> {
+    return this.trades.get(tradeName) ?? null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Shared setup
 // ---------------------------------------------------------------------------
@@ -147,7 +181,10 @@ class FakeEmailNotifier implements IEmailNotifier {
 function makeUserRecord(overrides: Partial<User> = {}): User {
   return {
     id: 'user-uuid-1',
+    name: 'Juan',
+    lastName: 'Pérez',
     email: 'user@example.com',
+    phone: '+543764123456',
     passwordHash: '$argon2id$placeholder',
     role: UserRole.CLIENTE,
     status: UserStatus.ACTIVO,
@@ -164,6 +201,7 @@ interface TestApp {
   attemptStore: FakeAttemptStore;
   tokenStore: FakeTokenStore;
   emailNotifier: FakeEmailNotifier;
+  regulatedTradeRepo: FakeRegulatedTradeRepo;
   module: TestingModule;
 }
 
@@ -172,6 +210,7 @@ async function buildApp(): Promise<TestApp> {
   const attemptStore = new FakeAttemptStore();
   const tokenStore = new FakeTokenStore();
   const emailNotifier = new FakeEmailNotifier();
+  const regulatedTradeRepo = new FakeRegulatedTradeRepo();
 
   const module = await Test.createTestingModule({
     imports: [
@@ -181,18 +220,26 @@ async function buildApp(): Promise<TestApp> {
     controllers: [AuthController],
     providers: [
       AuthService,
+      RegistrationService,
       { provide: USER_REPOSITORY, useValue: userRepo },
       { provide: ATTEMPT_STORE, useValue: attemptStore },
       { provide: TOKEN_STORE, useValue: tokenStore },
       { provide: EMAIL_NOTIFIER, useValue: emailNotifier },
+      { provide: REGULATED_TRADE_REPOSITORY, useValue: regulatedTradeRepo },
     ],
   }).compile();
 
   const app = module.createNestApplication();
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    }),
+  );
   await app.init();
 
-  return { app, userRepo, attemptStore, tokenStore, emailNotifier, module };
+  return { app, userRepo, attemptStore, tokenStore, emailNotifier, regulatedTradeRepo, module };
 }
 
 // ---------------------------------------------------------------------------
@@ -496,6 +543,202 @@ describe('AuthController (API integration)', () => {
 
       expect(notFound.body.message).toBeDefined();
       expect(expired.body.message).toBeDefined();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // POST /auth/register
+  // -------------------------------------------------------------------------
+  describe('POST /auth/register', () => {
+    it('ESC-01: role cliente complete fields → 201 with status=activo providerStatus=null', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Juan',
+          lastName: 'Pérez',
+          email: 'juan@example.com',
+          phone: '+543764123456',
+          password: 'SecurePass1',
+          role: 'cliente',
+        });
+
+      expect(res.status).toBe(HttpStatus.CREATED);
+      expect(res.body.id).toBeDefined();
+      expect(res.body.email).toBe('juan@example.com');
+      expect(res.body.role).toBe('cliente');
+      expect(res.body.status).toBe('activo');
+      expect(res.body.providerStatus).toBeNull();
+      expect(res.body.message).toBe('Account created successfully.');
+    });
+
+    it('ESC-02: role prestador + non-regulated trade → 201 with providerStatus=habilitado', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Carlos',
+          lastName: 'Gómez',
+          email: 'carlos@example.com',
+          phone: '+543764654321',
+          password: 'SecurePass2',
+          role: 'prestador',
+          trade: 'plomero',
+        });
+
+      expect(res.status).toBe(HttpStatus.CREATED);
+      expect(res.body.role).toBe('prestador');
+      expect(res.body.status).toBe('activo');
+      expect(res.body.providerStatus).toBe('habilitado');
+      expect(res.body.message).toBe('Account created successfully.');
+    });
+
+    it('ESC-03: role prestador + regulated trade → 201 with providerStatus=pendiente_habilitacion + message in Spanish', async () => {
+      const { app, regulatedTradeRepo } = testApp;
+      // Seed a regulated trade
+      regulatedTradeRepo.seed({
+        id: 'reg-trade-1',
+        tradeName: 'gasista',
+        createdAt: new Date(),
+      });
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Martín',
+          lastName: 'López',
+          email: 'martin@example.com',
+          phone: '+543764111222',
+          password: 'SecurePass3',
+          role: 'prestador',
+          trade: 'gasista',
+        });
+
+      expect(res.status).toBe(HttpStatus.CREATED);
+      expect(res.body.role).toBe('prestador');
+      expect(res.body.status).toBe('activo');
+      expect(res.body.providerStatus).toBe('pendiente_habilitacion');
+      expect(res.body.message).toBe(
+        'Cuenta creada. Verificá tu matrícula profesional para activar tu perfil de prestador.',
+      );
+    });
+
+    it('ESC-04: missing required fields → 422', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          // empty body — all fields missing
+        });
+
+      expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(res.body.message).toBeDefined();
+      // Should list multiple missing fields
+      expect(Array.isArray(res.body.message)).toBe(true);
+    });
+
+    it('ESC-05: invalid email format → 422', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Juan',
+          lastName: 'Pérez',
+          email: 'not-an-email',
+          phone: '+543764123456',
+          password: 'SecurePass1',
+          role: 'cliente',
+        });
+
+      expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+    });
+
+    it('ESC-05: password too short (< 8 chars) → 422', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Juan',
+          lastName: 'Pérez',
+          email: 'juan@example.com',
+          phone: '+543764123456',
+          password: 'Ab1', // too short
+          role: 'cliente',
+        });
+
+      expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
+    });
+
+    it('ESC-06: duplicate email → 409 with generic message, no account created', async () => {
+      const { app, userRepo } = testApp;
+      // Seed an existing user
+      userRepo.seed(makeUserRecord({ email: 'existing@example.com' }));
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Otro',
+          lastName: 'Usuario',
+          email: 'existing@example.com', // same email
+          phone: '+543764999999',
+          password: 'SecurePass99',
+          role: 'cliente',
+        });
+
+      expect(res.status).toBe(HttpStatus.CONFLICT);
+      expect(res.body.message).toBe('An account with this email already exists.');
+      // Must not reveal account details (RNF-S.4, RN-REG-02)
+      expect(res.body.message).not.toContain('activo');
+      expect(res.body.message).not.toContain('suspendido');
+    });
+
+    it('ESC-06: duplicate email reveals no account status details', async () => {
+      const { app, userRepo } = testApp;
+      // Seed a SUSPENDED account — response must still not reveal it
+      userRepo.seed(
+        makeUserRecord({
+          email: 'suspended@example.com',
+          status: UserStatus.SUSPENDIDO,
+        }),
+      );
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Test',
+          lastName: 'User',
+          email: 'suspended@example.com',
+          phone: '+543764000000',
+          password: 'SecurePass00',
+          role: 'cliente',
+        });
+
+      expect(res.status).toBe(HttpStatus.CONFLICT);
+      expect(res.body.message).toBe('An account with this email already exists.');
+      expect(res.body.message).not.toContain('suspendido');
+      expect(res.body.message).not.toContain('prestador');
+    });
+
+    it('ESC-01/04: invalid role → 422', async () => {
+      const { app } = testApp;
+
+      const res = await supertest(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          name: 'Juan',
+          lastName: 'Pérez',
+          email: 'juan@example.com',
+          phone: '+543764123456',
+          password: 'SecurePass1',
+          role: 'invalid_role',
+        });
+
+      expect(res.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
     });
   });
 });
