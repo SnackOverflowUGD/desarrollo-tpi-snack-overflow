@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { JwtPayload } from '../auth/strategies/jwt.strategy.js';
 import { ContratacionService } from './application/contratacion.service.js';
 import { CreateContratacionDto } from './dto/create-contratacion.dto.js';
