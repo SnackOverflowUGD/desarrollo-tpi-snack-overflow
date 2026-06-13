@@ -52,6 +52,24 @@ function makeCreateDto(overrides: Partial<CreateContratacionDto> = {}): CreateCo
   return Object.assign(dto, overrides);
 }
 
+function makeContratacion(overrides: Partial<Contratacion> = {}): Contratacion {
+  return {
+    id: 'contratacion-uuid-1',
+    ubicacion: 'Av. Siempre Viva 123, Springfield',
+    prestadorId: 'prestador-uuid-1',
+    clienteId: 'cliente-uuid-1',
+    fecha: '2026-06-20',
+    franja: '08:00-09:00',
+    descripcion: 'Se rompió el caño de la cocina.',
+    estado: ContratacionEstado.SOLICITADA,
+    fechaPropuesta: null,
+    franjaPropuesta: null,
+    precioEstimado: null,
+    createdAt: new Date('2026-06-13'),
+    ...overrides,
+  } as Contratacion;
+}
+
 function makeMocks() {
   const mockQueryRunner = {
     connect: jest.fn().mockResolvedValue(undefined),
@@ -76,6 +94,7 @@ function makeMocks() {
 
   const contratacionRepo: jest.Mocked<IContratacionRepository> = {
     save: jest.fn(),
+    findById: jest.fn(),
   };
 
   const availabilityService: jest.Mocked<IAvailabilityService> = {
@@ -340,5 +359,234 @@ describe('ContratacionService.create()', () => {
       dto.fecha,
       dto.franja,
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC08: SendProposal — Enviar propuesta
+// ---------------------------------------------------------------------------
+describe('ContratacionService.sendProposal()', () => {
+  it('UC08-SP-01: valid proposal → returns ContratacionResponseDto', async () => {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    const contratacion = makeContratacion();
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+    contratacionRepo.save.mockImplementation(
+      async (entity: Contratacion): Promise<Contratacion> => ({
+        ...entity,
+        id: 'contratacion-uuid-1',
+        createdAt: new Date('2026-06-13'),
+      }),
+    );
+    stateMachine.transitionTo.mockResolvedValue(undefined);
+
+    const dto = {
+      fecha: '2026-06-20',
+      franja: '10:00-11:00',
+      precioEstimado: 150.0,
+    };
+
+    const result = await service.sendProposal(
+      'contratacion-uuid-1',
+      dto,
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe('contratacion-uuid-1');
+    expect(result.fechaPropuesta).toBe('2026-06-20');
+    expect(result.franjaPropuesta).toBe('10:00-11:00');
+    expect(result.precioEstimado).toBe(150.0);
+    expect(result.estado).toBe(ContratacionEstado.PRESUPUESTADA);
+
+    expect(contratacionRepo.findById).toHaveBeenCalledWith('contratacion-uuid-1');
+    expect(contratacionRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fechaPropuesta: '2026-06-20',
+        franjaPropuesta: '10:00-11:00',
+        precioEstimado: 150.0,
+        estado: ContratacionEstado.PRESUPUESTADA,
+      }),
+    );
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.PRESUPUESTADA,
+    );
+  });
+
+  it('UC08-SP-02: role CLIENTE → ForbiddenException 403', async () => {
+    const { service } = makeMocks();
+
+    await expect(
+      service.sendProposal(
+        'contratacion-uuid-1',
+        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150.0 },
+        'cliente-uuid-1',
+        UserRole.CLIENTE,
+      ),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('UC08-SP-03: prestadorId mismatch → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    const contratacion = makeContratacion({ prestadorId: 'other-prestador' });
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+
+    await expect(
+      service.sendProposal(
+        'contratacion-uuid-1',
+        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150.0 },
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC08-SP-04: estado not SOLICITADA → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    const contratacion = makeContratacion({
+      estado: ContratacionEstado.PRESUPUESTADA,
+    });
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+
+    await expect(
+      service.sendProposal(
+        'contratacion-uuid-1',
+        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150.0 },
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('UC08-SP-05: fecha in the past → UnprocessableEntityException 422', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    const contratacion = makeContratacion();
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    await expect(
+      service.sendProposal(
+        'contratacion-uuid-1',
+        { fecha: yesterday, franja: '10:00-11:00', precioEstimado: 150.0 },
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('UC08-SP-06: precioEstimado <= 0 → UnprocessableEntityException 422', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    const contratacion = makeContratacion();
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+
+    await expect(
+      service.sendProposal(
+        'contratacion-uuid-1',
+        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 0 },
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+
+    await expect(
+      service.sendProposal(
+        'contratacion-uuid-1',
+        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: -50 },
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(UnprocessableEntityException);
+  });
+
+  it('UC08-SP-07: findById returns null → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(null);
+
+    await expect(
+      service.sendProposal(
+        'nonexistent-id',
+        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150.0 },
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC08: Reject — Rechazar solicitud
+// ---------------------------------------------------------------------------
+describe('ContratacionService.reject()', () => {
+  it('UC08-RE-01: valid reject → returns ContratacionResponseDto with CANCELADA', async () => {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    const contratacion = makeContratacion();
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+    contratacionRepo.save.mockImplementation(
+      async (entity: Contratacion): Promise<Contratacion> => ({
+        ...entity,
+        id: 'contratacion-uuid-1',
+        createdAt: new Date('2026-06-13'),
+      }),
+    );
+    stateMachine.transitionTo.mockResolvedValue(undefined);
+
+    const result = await service.reject(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+
+    expect(result).toBeDefined();
+    expect(result.id).toBe('contratacion-uuid-1');
+    expect(result.estado).toBe(ContratacionEstado.CANCELADA);
+
+    expect(contratacionRepo.findById).toHaveBeenCalledWith('contratacion-uuid-1');
+    expect(contratacionRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: ContratacionEstado.CANCELADA }),
+    );
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.CANCELADA,
+    );
+  });
+
+  it('UC08-RE-02: findById returns null → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(null);
+
+    await expect(
+      service.reject('nonexistent-id', 'prestador-uuid-1', UserRole.PRESTADOR),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC08-RE-03: estado not SOLICITADA → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    const contratacion = makeContratacion({
+      estado: ContratacionEstado.PRESUPUESTADA,
+    });
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+
+    await expect(
+      service.reject('contratacion-uuid-1', 'prestador-uuid-1', UserRole.PRESTADOR),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('UC08-RE-04: prestadorId mismatch → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    const contratacion = makeContratacion({ prestadorId: 'other-prestador' });
+    contratacionRepo.findById.mockResolvedValue(contratacion);
+
+    await expect(
+      service.reject('contratacion-uuid-1', 'prestador-uuid-1', UserRole.PRESTADOR),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC08-RE-05: role CLIENTE → ForbiddenException 403', async () => {
+    const { service } = makeMocks();
+
+    await expect(
+      service.reject('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(ForbiddenException);
   });
 });

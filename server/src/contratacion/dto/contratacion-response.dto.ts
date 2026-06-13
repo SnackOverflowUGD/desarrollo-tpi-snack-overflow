@@ -8,6 +8,9 @@ export class ContratacionResponseDto {
   fecha: string;
   franja: string;
   descripcion: string;
+  fechaPropuesta?: string | null;
+  franjaPropuesta?: string | null;
+  precioEstimado?: number | null;
   estado: ContratacionEstado;
   createdAt: Date;
 
