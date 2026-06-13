@@ -34,11 +34,8 @@ jobs:
         run: npm ci
 
       - name: Lint
-        # Non-blocking for now: committed code predates a consistent prettier pass
-        # (~265 eslint issues, mostly formatting). A coordinated `prettier --write`
-        # sweep is deferred until iteration-1 branches merge, to avoid conflict churn
-        # in devs' in-flight local work. Flip continue-on-error to false after that.
-        continue-on-error: true
+        # Blocking gate: prettier sweep + eslint cleanup landed post iteration-1 merge
+        # (type-aware 'unsafe' rules scoped off for test files in eslint.config.mjs).
         run: npx eslint src test --no-error-on-unmatched-pattern
 
       - name: Unit tests + coverage
