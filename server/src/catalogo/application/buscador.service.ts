@@ -1,6 +1,6 @@
 import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PRESTADOR_REPOSITORY, IPrestadorRepository, BusquedaCriteria, PaginatedResult } from '../ports/prestador-repository.port.js';
-import { GEOCODING_SERVICE, IGeocodingService, Coordenadas } from '../ports/geocoding.port.js';
+import { PRESTADOR_REPOSITORY, type IPrestadorRepository, type BusquedaCriteria, type PaginatedResult } from '../ports/prestador-repository.port.js';
+import { GEOCODING_SERVICE, type IGeocodingService, type Coordenadas } from '../ports/geocoding.port.js';
 import { IRankingStrategy, RankingContext, RankingStrategyType } from '../domain/ranking-strategy.interface.js';
 import { RankingPorCalificacionStrategy } from '../domain/ranking/ranking-por-calificacion.strategy.js';
 import { RankingPorDistanciaStrategy } from '../domain/ranking/ranking-por-distancia.strategy.js';
