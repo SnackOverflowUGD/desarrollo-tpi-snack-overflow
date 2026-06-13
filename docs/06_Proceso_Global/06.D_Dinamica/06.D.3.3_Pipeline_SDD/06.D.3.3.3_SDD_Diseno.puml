@@ -1,0 +1,25 @@
+@startuml
+!include ../../../00_Comun/00.0_Estilo_Comun.iuml
+
+!define Coo <center>Coordinador IA
+!define SubDis <center>Subagente\nde Diseño
+
+|Coo|
+|SubDis|
+
+|Coo|
+start
+
+repeat
+    :<center>Instanciar Subagente\nde Diseño;
+    |SubDis|
+    :<center>Consultar Memoria\nPersistente;
+    :<center>Genera Diseño\nDetallado;
+    :<center>Registrar en Memoria\nPersistente;
+    |Desarrollador|
+    :<center>Verifica y Valida\nDiseño Detallado;
+    backward :<center>Comunicar observaciones;
+repeat while (<center>¿Respeta los ADRs registrados\ny es consistente con\nla arquitectura base?) is (<center>No) not (<center>Sí)
+
+stop
+@enduml

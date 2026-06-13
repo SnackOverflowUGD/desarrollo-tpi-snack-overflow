@@ -1,0 +1,51 @@
+@startuml
+!include ../../../00_Comun/00.0_Estilo_Comun.iuml
+
+!define Coo <center>Coordinador IA
+!define SubVer <center>Subagente\nVerificador
+!define SubImp <center>Subagente\nde Implementación
+
+|Coo|
+|SubVer|
+|SubImp|
+
+|Coo|
+start
+
+repeat
+    :<center>Instanciar Subagente\nVerificador;
+    |SubVer|
+    :<center>Consultar Memoria\nPersistente;
+    :<center>Deriva tests de\nSpec Ejecutable;
+    fork
+    :<center>Ejecutar tests\ncontra el código;
+    fork again
+    :<center>Genera Reporte\nde Validación;
+    end fork
+    :<center>Registrar en Memoria\nPersistente;
+    |Desarrollador|
+    :<center>Verifica y Valida\nReporte de Validación;
+backward :<center>Comunicar observaciones;
+repeat while (<center>¿Todos los criterios\nestán cubiertos?) is (<center>No) not (<center>Sí)
+
+if (<center>¿Los tests se ejecutaron\ncorrectamente?) then (<center>Sí)
+else (<center>No)
+    repeat
+        :Comunicar observaciones;
+        |SubImp|
+        :<center>Generar Código\nFuente Válido;
+        note left:<center>Se desarrolla en el sub-modelo\n"3.5.4. Pipeline SDD\n(Generar Código Fuente Válido)"
+        |SubVer|
+        fork
+        :<center>Ejecutar tests\ncontra el código;
+        fork again
+        :<center>Genera Reporte\nde Validación;
+        end fork
+        :<center>Registrar en Memoria\nPersistente;
+        |Desarrollador|
+        :<center>Verifica y Valida\nReporte de Validación;
+    repeat while (<center>¿Los tests se ejecutaron\ncorrectamente?) is (<center>No) not (<center>Si)
+endif
+
+stop
+@enduml

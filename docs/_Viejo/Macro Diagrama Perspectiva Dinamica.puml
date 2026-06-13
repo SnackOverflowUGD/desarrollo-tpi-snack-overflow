@@ -1,0 +1,189 @@
+@startuml
+title  Meta-Modelo Del Proceso De Desarrollo Global
+
+' === Modern soft theme ===
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam titleFontSize 16
+skinparam titleFontStyle bold
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam linetype polyline
+
+skinparam activity {
+    BackgroundColor       #B0DFE8
+    BorderColor           #7DB9C5
+    FontColor             #0F3539
+    FontName              Helvetica
+    FontSize              11
+    DiamondBackgroundColor #F4E2A0
+    DiamondBorderColor    #C9B05E
+    DiamondFontColor      #3A2E0A
+    StartColor            #6B7280
+    EndColor              #6B7280
+    BarColor              #6B7280
+}
+
+skinparam partition {
+    BackgroundColor #FFFFFF
+    BorderColor     #C9C9BE
+    FontColor       #4A4A48
+    FontStyle       bold
+    FontSize        12
+}
+
+skinparam arrow {
+    Color     #6B7280
+    FontColor #4A4A48
+    FontSize  10
+    Thickness 1
+}
+
+skinparam note {
+    BackgroundColor #FFF8E1
+    BorderColor     #C9B05E
+    FontColor       #3A2E0A
+}
+
+!define ProMan <center>Project\nManager
+!define ProManAna <center>Project\nManager\n+ Analista
+!define Ana <center>Analista
+!define AnaArq <center>Analista\n+ Arquitecto
+!define Arq <center>Arquitecto
+!define Dev <center>Desarrollador
+!define Tes <center>Tester
+
+' SWIMLANES
+'|ProMan|
+'|ProManAna|
+'|Ana|
+'|AnaArq|
+'|Arq|
+'|Dev|
+'|Tes|
+
+' FASE CONCEPTION
+'|Ana|
+start
+fork
+:<center>Generar Documento\nde Visión;
+fork again
+:<center>Generar Glosario\nde Dominio;
+fork again
+:<center>Generar Lista\nde Riesgo inicial;
+end fork
+
+fork
+    :<center>Identificar y\nRefinar Requisitos;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del Proceso\nde Ingeniería de Requisitos
+    'package Identificar y Refinar Requisitos {
+    ':<center>Actualizar Requisitos;
+    ':<center>Actualizar Glosario;
+    ':<center>Identificar Casos\nde Uso principales;
+    '}
+fork again
+    :<center>Configurar y Refinar\nMemoria Persistente;
+fork again
+    :<center>Crear Work\nItem List inicial;
+endfork
+stop
+
+' FASE ELABORATION
+'|Arq|
+start
+fork
+    :<center>Identificar y\nRefinar Requisitos;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del Proceso\nde Ingeniería de Requisitos
+fork again
+    :<center>Desarrollar la\nArquitectura;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del\nProceso de Diseño
+
+'package Disciplina de Diseño {
+'repeat
+':<center>Definir\narquitectura base;
+':<center>Producir Vista\nLógica UML;
+':<center>Producir\nModelo 4+1;
+'note right:<center>En módulos\ncrítico
+'repeat while (<center>¿La arquitectura base\nmitiga los riesgos críticos?) is (No) not (Sí)
+'}
+
+'|Dev|
+fork again
+    :<center>Configurar y Refinar\nMemoria Persistente;
+fork again
+    :<center>Desarrollar documentación\ndel proyecto;
+endfork
+stop
+
+' FASE CONSTRUCTION
+'|AnaArq|
+start
+fork
+    :<center>Identificar y\nRefinar Requisitos;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del Proceso\nde Ingeniería de Requisitos
+fork again
+    package Proceso de Desarrollo {
+        repeat
+            :<center>Comenzar\nnuevo Sprint;
+            :<center>Asignar Work Items\na iteración;
+            :<center>Desarrollar Sprint;
+            note right:<center>Se desarrolla en\nel Meta-Modelo del\nProceso de Diseño
+            'package Desarrollar Sprint {
+            '    repeat
+            '    
+            '        repeat
+            '            '|Ana|
+            '           :<center>Seleccionar Work\nItem Pendiente;
+            '           :<center>Se divide en XYZ;
+            '           repeat
+            '               :<center>Detallar Caso de Uso\ncorrespondiente al XYZ;
+            '               '|Dev|
+            '               :<center>Ejecutar\npipeline SDD;
+            '               note left:<center>Se profundiza en\nel diagrama SDD
+            '           repeat while (<center>¿XYZ pendientes en Work Item?) is (Si) not (No)
+            '           if (<center>¿Work Item cumple todos los\nrequisitos del DoD?) then (No)
+            '               repeat
+            '               :<center>Cumplir con los\nrequisitos faltantes;
+            '               note left:<center>Esto no deberia ocurrir, ya\nque el pipeline se asegura\nque se cumpla la DoD
+            '               repeat while (<center>¿Work Item cumple todos los\nrequisitos del DoD?) is (No) not (Si)
+            '           else (Si)
+            '           endif
+            '           :<center>Integración del Work Item\nal producto del Sprint;
+            '       repeat while (<center>¿Work Items pendientes\nen Sprint?) is (Si) not (No)
+            '   '|ProMan|
+            '   :<center>Actualizar Work\nItem List;
+            '   '|Ana|
+            '   :<center>Actualizar Lista\nde Riesgos;
+            '   '|Dev|
+            '   :<center>Registrar decisiones\nen Memoria Persistente;
+            '   repeat while (<center>¿Work Item List vacía?) is (No) not (Sí)
+            '}
+        repeat while (<center>¿Work Item List vacía?) is (No) not (Sí)
+    }
+fork again
+    :<center>Configurar y Refinar\nMemoria Persistente;
+fork again
+    :<center>Desarrollar documentación\ndel proyecto;
+endfork
+stop
+
+' FASE TRANSITION
+'|Tes|
+start
+fork
+    :<center>Realizar proceso\nde verificación;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del\nProceso de Verificación
+'package Proceso de Verificación {
+':<center>Validación final\ndel sistema completo;
+':<center>Generar reporte\nde validación;
+':<center>Verificar cobertura\nde specs;
+'}
+fork again
+    :<center>Finalizar documentación\ndel proyecto;
+fork again
+    :<center>Prepararse para\nel despliegue;
+endfork
+:<center>Desplegar\nversión;
+stop
+@enduml

@@ -1,0 +1,199 @@
+@startuml
+title Perspectiva Estática (Vista 1 de 2) - Taxonomía estructural\nMeta-modelo del Proceso Híbrido (OpenUP / Scrum / SDD)
+
+' === Modern soft theme ===
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam titleFontSize 16
+skinparam titleFontStyle bold
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam ranksep 55
+skinparam nodesep 24
+skinparam classBorderThickness 1
+skinparam linetype polyline
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageBorderColor #C9C9BE
+skinparam packageFontColor #4A4A48
+skinparam packageFontStyle bold
+skinparam legendBackgroundColor #FFFFFF
+skinparam legendBorderColor #C9C9BE
+hide empty members
+hide circle
+
+skinparam arrow {
+    Color #6B7280
+    FontColor #4A4A48
+    FontSize 10
+    Thickness 1
+}
+
+skinparam class {
+    BackgroundColor<<fase>>       #F4E2A0
+    BorderColor<<fase>>           #C9B05E
+    FontColor<<fase>>             #3A2E0A
+
+    BackgroundColor<<disciplina>> #F4C9A0
+    BorderColor<<disciplina>>     #C9925E
+    FontColor<<disciplina>>       #3A1E0A
+
+    BackgroundColor<<rol>>        #BCB6E8
+    BorderColor<<rol>>            #8D88C8
+    FontColor<<rol>>              #2A2466
+
+    BackgroundColor<<artefacto>>  #B0DFE8
+    BorderColor<<artefacto>>      #7DB9C5
+    FontColor<<artefacto>>        #0F3539
+
+    BackgroundColor<<evento>>     #D8B5F0
+    BorderColor<<evento>>         #AF87CC
+    FontColor<<evento>>           #34145A
+}
+
+package "Fases (OpenUP)" {
+    class Fase <<fase>>
+    class "Inception" as FaseInception <<fase>>
+    class "Elaboración" as FaseElaboracion <<fase>>
+    class "Construcción" as FaseConstruccion <<fase>>
+    class "Transición" as FaseTransicion <<fase>>
+
+    Fase <|-- FaseInception
+    Fase <|-- FaseElaboracion
+    Fase <|-- FaseConstruccion
+    Fase <|-- FaseTransicion
+}
+
+package "Disciplinas" {
+    class Disciplina <<disciplina>>
+    class "Ing. Requerimientos" as DRequerimientos <<disciplina>>
+    class "Diseño" as DDiseno <<disciplina>>
+    class "Implementación" as DImplementacion <<disciplina>>
+    class "Verificación y Validación" as DVerificacion <<disciplina>>
+    class "Evolución" as DEvolucion <<disciplina>>
+
+    Disciplina <|-- DRequerimientos
+    Disciplina <|-- DDiseno
+    Disciplina <|-- DImplementacion
+    Disciplina <|-- DVerificacion
+    Disciplina <|-- DEvolucion
+}
+
+package "Eventos" {
+    class Evento <<evento>>
+    class "Evento Planificado" as EventoPlanificado <<evento>>
+    class Sprint <<evento>>
+    class "Sprint Planning" as SprintPlanning <<evento>>
+
+    Evento <|-- EventoPlanificado
+    EventoPlanificado <|-- Sprint
+    Sprint *-- SprintPlanning
+}
+
+package "Roles" {
+    class Rol <<rol>>
+    class "Admin. Proyecto" as AdminProyecto <<rol>>
+    class Analista <<rol>>
+    class Arquitecto <<rol>>
+    class Tester <<rol>>
+    class "Equipo de Desarrollo" as EquipoDesarrollo <<rol>>
+    class Desarrollador <<rol>>
+    class "Coordinador IA" as CoordinadorIA <<rol>>
+    class "Sub-agente Diseño" as SubDiseno <<rol>>
+    class "Sub-agente Implementación" as SubImpl <<rol>>
+    class "Sub-agente Verificación" as SubVerif <<rol>>
+
+    Rol <|-- AdminProyecto
+    Rol <|-- Analista
+    Rol <|-- Arquitecto
+    Rol <|-- Tester
+    Rol <|-- EquipoDesarrollo
+    EquipoDesarrollo <|-- Desarrollador
+    EquipoDesarrollo <|-- CoordinadorIA
+    CoordinadorIA *-- SubDiseno
+    CoordinadorIA *-- SubImpl
+    CoordinadorIA *-- SubVerif
+}
+
+package "Artefactos" {
+    class Artefacto <<artefacto>>
+
+    package "Requerimientos" {
+        class "Doc. Visión" as DocVision <<artefacto>>
+        class Glosario <<artefacto>>
+        class "Caso de Uso" as CasoUso <<artefacto>>
+        class Especificacion <<artefacto>>
+        class "Lista Riesgos" as ListaRiesgos <<artefacto>>
+        class "Work Item List" as WorkItemList <<artefacto>>
+        class "Sprint Backlog" as SprintBacklog <<artefacto>>
+        class "Espec. Ejecutable" as EspecEjecutable <<artefacto>>
+    }
+
+    package "Diseño" {
+        class "Vista 4+1" as Vista41 <<artefacto>>
+        class ADR <<artefacto>>
+        class "Diseño Detallado" as DisenioDetallado <<artefacto>>
+    }
+
+    package "Implementación" {
+        class "Código Fuente" as CodigoFuente <<artefacto>>
+        class "Micro-incremento" as MicroIncremento <<artefacto>>
+        class Incremento <<artefacto>>
+    }
+
+    package "V&V" {
+        class "Crit. Aceptación" as CriteriosAceptacion <<artefacto>>
+        class "Test Automatizado" as TestAutomatizado <<artefacto>>
+        class "Definition of Done" as DoD <<artefacto>>
+    }
+
+    package "Evolución" {
+        class "Memoria Persistente" as MemoriaPersistente <<artefacto>>
+    }
+
+    Artefacto <|-- DocVision
+    Artefacto <|-- Glosario
+    Artefacto <|-- CasoUso
+    Artefacto <|-- Especificacion
+    Artefacto <|-- ListaRiesgos
+    Artefacto <|-- WorkItemList
+    Artefacto <|-- SprintBacklog
+    Artefacto <|-- EspecEjecutable
+    Artefacto <|-- Vista41
+    Artefacto <|-- ADR
+    Artefacto <|-- DisenioDetallado
+    Artefacto <|-- CodigoFuente
+    Artefacto <|-- MicroIncremento
+    Artefacto <|-- Incremento
+    Artefacto <|-- CriteriosAceptacion
+    Artefacto <|-- TestAutomatizado
+    Artefacto <|-- DoD
+    Artefacto <|-- MemoriaPersistente
+
+    ' Composiciones / agregaciones intra-artefacto
+    Especificacion *-- CasoUso
+    EspecEjecutable o-- CriteriosAceptacion
+    MemoriaPersistente *-- ADR
+    Incremento *-- MicroIncremento
+}
+
+' Composición cross-package: Sprint contiene su Sprint Backlog
+Sprint *-- SprintBacklog
+
+legend right
+  | Color | Categoría |
+  |<#F4E2A0>| Fase (OpenUP) |
+  |<#F4C9A0>| Disciplina |
+  |<#BCB6E8>| Rol |
+  |<#B0DFE8>| Artefacto |
+  |<#D8B5F0>| Evento |
+  ----
+  Esta vista muestra **taxonomía**:
+  herencia (es-un) y composición (contiene).
+  Las relaciones rol↔artefacto se ven en
+  **Vista 2 - Producción**.
+endlegend
+
+@enduml

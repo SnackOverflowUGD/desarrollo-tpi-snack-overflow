@@ -1,0 +1,38 @@
+@startuml
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+!define ProMan <center>Project\nManager
+!define ProManAna <center>Project\nManager\n+ Analista
+!define Ana <center>Analista
+!define AnaArq <center>Analista\n+ Arquitecto
+!define Arq <center>Arquitecto
+!define Dev <center>Desarrollador
+!define Tes <center>Tester
+
+start
+repeat
+    :<center>Seleccionar Work\nItem Pendiente;
+    :<center>Dividir Work Item\nen Micro-incrementos;
+    repeat
+        :<center>Ejecutar\nPipeline SDD;
+        note left:<center>Se desarrolla en\nel Meta-Modelo de\nPipeline SDD
+        :<center>Integración del Micro-incremento\nal producto de Work Item;
+        :<center>Verificación de\nla integración;
+    repeat while (<center>¿Micro-incrementos\npendientes?) is (Si) not (No)
+    :<center>Integración del Work Item\nal producto del Sprint;
+    :<center>Verificación de\nla integración;
+repeat while (<center>¿Work Items pendientes\nen Sprint?) is (Si) not (No)
+
+:<center>Integración del Sprint\nal Producto Continuo;
+:<center>Verificación de\nla integración;
+fork
+    :<center>Actualizar Work\nItem List;
+fork again
+    :<center>Actualizar Lista\nde Riesgos;
+fork again
+    :<center>Registrar decisiones\nen Memoria Persistente;
+end fork
+
+stop
+
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+title Casos de Uso — Catálogo, publicación y agenda (RF-2, RF-4)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Cliente as C
+actor Prestador as P
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  usecase "UC04\nBuscar prestadores" as UC04
+  usecase "UC05\nPublicar servicios" as UC05
+  usecase "UC06\nGestionar agenda\ny disponibilidad" as UC06
+}
+
+C --> UC04
+P --> UC05
+P --> UC06
+
+' Precondición común (no se diagrama): UC05 y UC06 requieren «UC02 Autenticarse».
+' Nota (UC04): Acceso público — la búsqueda no requiere sesión iniciada.
+@enduml

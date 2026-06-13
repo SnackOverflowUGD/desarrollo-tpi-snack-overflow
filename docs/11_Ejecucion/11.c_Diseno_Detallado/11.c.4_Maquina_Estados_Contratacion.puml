@@ -1,0 +1,23 @@
+@startuml
+title 11.c — Máquina de estados · Ciclo de vida de la Contratación (UC09)
+hide empty description
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+[*] --> Solicitada : solicitar (UC07)
+
+Solicitada --> Presupuestada : enviar propuesta (UC08)
+Solicitada --> Cancelada : rechazar (UC08) /\ncancelar (UC10)
+
+Presupuestada --> Confirmada : aceptar propuesta (UC21)
+Presupuestada --> Cancelada : rechazar propuesta (UC21) /\ncancelar (UC10)
+
+Confirmada --> EnCurso : iniciar servicio (UC20)
+Confirmada --> Cancelada : cancelar (UC10)
+
+EnCurso --> Finalizada : confirmar finalización\ny liberar pago (UC13)
+EnCurso --> Cancelada : cancelar (UC10)
+
+Finalizada --> [*]
+Cancelada --> [*]
+@enduml

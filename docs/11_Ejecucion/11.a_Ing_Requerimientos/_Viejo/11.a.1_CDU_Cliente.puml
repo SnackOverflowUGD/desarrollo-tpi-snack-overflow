@@ -1,0 +1,52 @@
+@startuml
+title Casos de Uso principales (Cliente)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor "Cliente" as cliente
+
+rectangle "Plataforma de Oficios" {
+
+  usecase "Registrarse / Iniciar sesión" as iniciarSesion
+  usecase "Buscar prestadores" as buscarPrestadores
+  usecase "Filtrar por oficio" as filtrarPorOficio
+  usecase "Filtrar por zona geográfica" as filtrarPorZona
+  usecase "Filtrar por disponibilidad horaria" as filtrarPorDisponibilidad
+
+  usecase "Ver perfil del prestador" as verPerfilPrestador
+  usecase "Consultar habilitaciones verificadas" as consultarHabilitaciones
+  usecase "Consultar calificaciones y reseñas" as consultarResenas
+
+  usecase "Solicitar contratación" as solicitarContratacion
+  usecase "Seleccionar franja horaria" as seleccionarFranjaHoraria
+  usecase "Realizar pago" as realizarPago
+
+  usecase "Confirmar finalización del servicio" as confirmarFinalizacionServicio
+  usecase "Calificar al prestador" as calificarPrestador
+
+  usecase "Ver historial de contrataciones" as verHistorialContrataciones
+}
+
+cliente --> iniciarSesion
+cliente --> buscarPrestadores
+cliente --> verPerfilPrestador
+cliente --> solicitarContratacion
+cliente --> realizarPago
+cliente --> confirmarFinalizacionServicio
+cliente --> calificarPrestador
+cliente --> verHistorialContrataciones
+
+buscarPrestadores ..> filtrarPorOficio : <<extend>>
+buscarPrestadores ..> filtrarPorZona : <<extend>>
+buscarPrestadores ..> filtrarPorDisponibilidad : <<extend>>
+
+verPerfilPrestador ..> consultarHabilitaciones : <<include>>
+verPerfilPrestador ..> consultarResenas : <<include>>
+
+solicitarContratacion ..> seleccionarFranjaHoraria : <<include>>
+solicitarContratacion ..> realizarPago : <<include>>
+
+confirmarFinalizacionServicio ..> calificarPrestador : <<include>>
+
+@enduml

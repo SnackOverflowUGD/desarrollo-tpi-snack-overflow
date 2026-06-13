@@ -1,0 +1,195 @@
+---
+config:
+    layout: elk
+    class:
+        hideEmptyMembersBox: true
+    theme: neutral
+title: Meta-modelo
+---
+classDiagram
+
+namespace Roles {
+    class Arquitecto["Arquitecto"]:::rol {
+        <<Rol>>
+    }
+
+    class SubDis["Subagente de Diseño"]:::rol {
+        <<Rol>>
+    }
+
+    class SubVer["Subagente Verificador"]:::rol {
+        <<Rol>>
+    }
+
+    class SubImp["Subagente de Implementación"]:::rol {
+        <<Rol>>
+    }
+
+    class SubRed["Subagente Redactor"]:::rol {
+        <<Rol>>
+    }
+
+    class CoordinadorIA["Coordinador de IA"]:::rol {
+        <<Rol>>
+    }
+
+    class Analista["Analista"]:::rol {
+        <<Rol>>
+    }
+
+    class Desarrollador["Desarrollador"]:::rol {
+        <<Rol>>
+    }
+
+    class Tester["Tester"]:::rol {
+        <<Rol>>
+    }
+
+    class EquipoDesarrollo["Equipo de Desarrollo"]:::rol {
+        <<Rol>>
+    }
+}
+
+EquipoDesarrollo *-- Desarrollador
+EquipoDesarrollo *-- CoordinadorIA
+CoordinadorIA *-- SubVer : Coordina
+CoordinadorIA *-- SubDis : Coordina
+CoordinadorIA *-- SubImp : Coordina
+CoordinadorIA *-- SubRed : Coordina
+
+namespace Diseno {
+    class ADR["Architecture Decision Record (ADR)"]:::artefacto {
+        <<Artefacto>>
+    }
+    class DisenoDetallado["Diseño Detallado"]:::artefacto {
+        <<Artefacto>>
+    }
+}
+
+
+    class MemoriaPersistente["Memoria Persistente"]:::artefacto {
+        <<Artefacto>>
+    }
+
+
+namespace Requisitos {
+    class Glosario["Glosario"]:::artefacto {
+        <<Artefacto>>
+    }
+    class ListaRiesgos["Lista de Riesgos"]:::artefacto {
+        <<Artefacto>>
+    }
+    class DocVision["Doc. Visión"]:::artefacto {
+        <<Artefacto>>
+    }
+    class EspecEjecutable["Espec. Ejecutable"]:::artefacto {
+        <<Artefacto>>
+    }
+    class SprintBacklog["Sprint Backlog"]:::artefacto {
+        <<Artefacto>>
+    }
+    class WorkItemList["Work Item List"]:::artefacto {
+        <<Artefacto>>
+    }
+    class WorkItem["Work Item"]:::artefacto {
+        <<Artefacto>>
+    }
+    class Especificacion["Especificación"]:::artefacto {
+        <<Artefacto>>
+    }
+}
+
+WorkItemList *-- WorkItem
+
+namespace VyV {
+    class TestAutomatizado["Test Automatizado"]:::artefacto {
+        <<Artefacto>>
+    }
+
+    class TestUnitario["Test Unitario"]:::artefacto {
+        <<Artefacto>>
+    }
+
+    class TestManual["Test Manual"]:::artefacto {
+        <<Artefacto>>
+    }
+
+    class TestSistema["Test de Sistema"]:::artefacto {
+        <<Artefacto>>
+    }
+
+    class TestIntegracion["Test de Integración"]:::artefacto {
+        <<Artefacto>>
+    }
+
+    class DoD["Definition of Done"]:::artefacto {
+        <<Artefacto>>
+    }
+
+    class CriteriosAceptacion["Crit. Aceptación"]:::artefacto {
+        <<Artefacto>>
+    }
+}
+
+TestAutomatizado *-- TestUnitario
+TestManual *-- TestIntegracion
+TestManual *-- TestSistema
+
+namespace Implementacion {
+    class MicroIncremento["Micro-incremento"]:::artefacto {
+        <<Artefacto>>
+    }
+    class Incremento["Incremento"]:::artefacto {
+        <<Artefacto>>
+    }
+    class ProductoSoftware["Producto de Software"]:::artefacto {
+        <<Artefacto>>
+    }
+}
+
+Incremento *-- MicroIncremento
+
+namespace Evento {
+    class Sprint["Sprint"]:::evento {
+        <<Evento>>
+    }
+}
+
+%% === RELACIONES ===
+Arquitecto --> ADR : Registra
+SubDis --> DisenoDetallado : Genera
+Desarrollador --> DisenoDetallado : Valida
+
+Desarrollador --> MemoriaPersistente : Actualiza y Refina
+SubDis --> MemoriaPersistente : Consulta
+SubVer --> MemoriaPersistente : Consulta
+SubRed --> MemoriaPersistente : Consulta
+SubImp --> MemoriaPersistente : Consulta
+
+EquipoDesarrollo --> Incremento : Produce
+Sprint --> Incremento : Produce
+DoD --> Incremento : Valida
+
+Analista --> ListaRiesgos : genera
+Analista --> DocVision : genera
+Analista --> Especificacion : genera
+Analista --> Glosario : mantiene
+SubImp --> EspecEjecutable : consume
+SubImp --> ProductoSoftware : genera
+SubVer --> TestAutomatizado : genera
+Desarrollador --> TestAutomatizado : valida
+Tester --> TestManual : genera
+Desarrollador --> MicroIncremento : produce 
+CoordinadorIA --> EspecEjecutable : orquesta pipeline sobre
+Especificacion --> CriteriosAceptacion : deriva
+TestUnitario --> CriteriosAceptacion : basado en
+MemoriaPersistente --> EspecEjecutable : versiona
+SprintBacklog --> WorkItemList : derivado de
+
+
+classDef proceso fill:#3d3d3a,stroke:#2C2C2A,color:#F1EFE8
+classDef fase fill:#A2D9CE,stroke:#0E6655,color:#1a0033
+classDef disciplina fill:#F9E79F,stroke:#C5A00D,color:#1a0f00
+classDef evento fill:#E7A274,stroke:#D96E26,color:#1a1400 
+classDef rol fill:#E1CDE9,stroke:#2c2570,color:#001a1e
+classDef artefacto fill: #9BCDED,stroke:#21618C,color:#001a1e

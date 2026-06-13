@@ -1,0 +1,17 @@
+@startuml
+title Diseño
+
+!include ../00_Comun/00.0_Estilo_Comun.iuml
+
+start
+fork
+    :<center>Evaluar arquitecturas\nde software;
+fork again
+    :<center>Evaluar patrones\nde diseño;
+fork again
+    :<center>Diseñar y refinar\ninterfaces;
+fork again
+    :<center>Diseñar y refinar\nbase de datos;
+end fork
+stop
+@enduml

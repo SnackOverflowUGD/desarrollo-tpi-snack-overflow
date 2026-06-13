@@ -1,0 +1,56 @@
+@startuml
+title 11.c — Clases de diseño · Patrones State y Observer sobre Contratación
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+' ===== Patrón State : el estado de la Contratación gobierna su comportamiento =====
+' ===== Patrón Observer : un cambio de estado notifica a ambas partes (UC19)   =====
+
+class Contratacion {
+  - id
+  - fechaSolicitud
+  - estado : EstadoContratacion
+  - observadores : Observador[*]
+  --
+  + solicitar()
+  + aceptar()
+  + iniciar()
+  + finalizar()
+  + cancelar()
+  + setEstado(e : EstadoContratacion)
+  + suscribir(o : Observador)
+  - notificar()
+}
+
+abstract class EstadoContratacion {
+  + aceptar(c : Contratacion)
+  + iniciar(c : Contratacion)
+  + finalizar(c : Contratacion)
+  + cancelar(c : Contratacion)
+}
+
+class Solicitada
+class Confirmada
+class EnCurso
+class Finalizada
+class Cancelada
+
+interface Observador {
+  + actualizar(c : Contratacion)
+}
+
+class NotificadorCliente
+class NotificadorPrestador
+
+EstadoContratacion <|-- Solicitada
+EstadoContratacion <|-- Confirmada
+EstadoContratacion <|-- EnCurso
+EstadoContratacion <|-- Finalizada
+EstadoContratacion <|-- Cancelada
+
+Observador <|.. NotificadorCliente
+Observador <|.. NotificadorPrestador
+
+Contratacion o--> "estado actual" EstadoContratacion : <<State>> Context
+Contratacion o--> "* observadores" Observador : <<Observer>> Subject
+@enduml

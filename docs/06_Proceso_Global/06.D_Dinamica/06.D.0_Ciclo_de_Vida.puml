@@ -1,0 +1,26 @@
+@startuml
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+start
+repeat
+    :Fase de Inicio;
+    note left :<center>Se desarrolla en\nel Meta-Modelo de\nFase de Inicio
+repeat while (<center>¿Se cumplieron los\nhitos de la fase?) is (<center>No) not (<center>Si)
+
+repeat
+    :Fase de Elaboración;
+    note left :<center>Se desarrolla en\nel Meta-Modelo de\nFase de Elaboración
+repeat while (<center>¿Se cumplieron los\nhitos de la fase?) is (<center>No) not (<center>Si)
+
+repeat
+    :Fase de Construcción;
+    note left :<center>Se desarrolla en\nel Meta-Modelo de\nFase de Construcción
+repeat while (<center>¿Se cumplieron los\nhitos de la fase?) is (<center>No) not (<center>Si)
+
+repeat
+    :Fase de Transición;
+    note left :<center>Se desarrolla en\nel Meta-Modelo de\nFase de Transición
+    repeat while (<center>¿Se cumplieron los\nhitos de la fase?) is (<center>No) not (<center>Si)
+stop
+
+@enduml

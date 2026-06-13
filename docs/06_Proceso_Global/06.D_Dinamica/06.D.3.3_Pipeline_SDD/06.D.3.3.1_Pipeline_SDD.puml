@@ -1,0 +1,15 @@
+@startuml
+!include ../../../00_Comun/00.0_Estilo_Comun.iuml
+
+start
+:<center>Instanciar Coordinador\nde IA con Caso de Uso;
+:<center>Generar Spec\nEjecutable Válida;
+note left:<center>Se desarrolla en el sub-modelo\n"Pipeline SDD (Generar\nSpec Ejecutable Válido)"
+:<center>Generar Diseño\nDetallado Válido;
+note left:<center>Se desarrolla en el sub-modelo\n"Pipeline SDD (Generar\nDiseño Detallado Válido)"
+:<center>Generar Código\nFuente Válido;
+note left:<center>Se desarrolla en el sub-modelo\n"Pipeline SDD (Generar\nCódigo Fuente Válido)"
+:<center>Generar Reporte\nde Validación Válido;
+note left:<center>Se desarrolla en el sub-modelo\n"Pipeline SDD (Generar\nReporte de Validación Válido)"
+stop
+@enduml

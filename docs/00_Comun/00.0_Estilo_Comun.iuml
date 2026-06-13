@@ -1,0 +1,96 @@
+' =============================================================
+'  Estilo común — Diagramas TPI Metodologías Avanzadas (SnackOverflow)
+'  "Modern soft theme"
+'
+'  Archivo de inclusión (.iuml): NO se renderiza como diagrama.
+'  Cada .puml lo incorpora con:  !include <ruta-relativa>/00.0_Estilo_Comun.iuml
+'  Editar acá cambia el estilo de TODOS los diagramas que lo incluyen.
+'
+'  Contiene los bloques de todos los tipos de diagrama del repo
+'  (usecase, actor, activity, partition, rectangle). PlantUML ignora
+'  silenciosamente los skinparam que no apliquen a un diagrama dado.
+' =============================================================
+
+' --- Generales ---
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam titleFontSize 16
+skinparam titleFontStyle bold
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam nodesep 25
+skinparam ranksep 40
+skinparam linetype splines
+
+' --- Casos de uso ---
+skinparam usecase {
+    BackgroundColor       #C9DFEE
+    BorderColor           #000000
+    FontColor             #000000
+    FontName              Helvetica
+    FontSize              11
+}
+
+' --- Actores ---
+skinparam actor {
+    BackgroundColor       #C9DFEE
+    BorderColor           #000000
+    FontColor             #000000
+    FontName              Helvetica
+    FontSize              11
+}
+
+' Actores que representan sistemas externos
+skinparam actor<<sistema externo>> {
+    BackgroundColor       #EFE3C8
+    BorderColor           #000000
+}
+
+' --- Actividad (diagramas dinámicos) ---
+skinparam activity {
+    BackgroundColor        #C9DFEE
+    BorderColor            #000000
+    FontColor              #000000
+    FontName               Helvetica
+    FontSize               11
+    DiamondBackgroundColor #D9C2E3
+    DiamondBorderColor     #000000
+    DiamondFontColor       #000000
+    StartColor             #000000
+    EndColor               #000000
+    BarColor               #000000
+}
+
+' --- Particiones (swimlanes) ---
+skinparam partition {
+    BackgroundColor #FFFFFF
+    BorderColor     #C9C9BE
+    FontColor       #4A4A48
+    FontStyle       bold
+    FontSize        12
+}
+
+' --- Contenedores (límite del sistema en CDU) ---
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor     #C9C9BE
+    FontColor       #4A4A48
+    FontStyle       bold
+    FontSize        12
+}
+
+' --- Flechas / relaciones ---
+skinparam arrow {
+    Color     #090D10
+    FontColor #090D10
+    FontSize  10
+    Thickness 1
+}
+
+' --- Notas ---
+skinparam note {
+    BackgroundColor #FFF8E1
+    BorderColor     #C9B05E
+    FontColor       #3A2E0A
+}

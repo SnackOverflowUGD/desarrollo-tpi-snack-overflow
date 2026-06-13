@@ -1,0 +1,16 @@
+@startuml
+title Ingeniería de Requerimientos
+
+!include ../00_Comun/00.0_Estilo_Comun.iuml
+
+start
+fork
+:<center>Generar Documento\nde Visión;
+fork again
+:<center>Generar Glosario\nde Dominio;
+fork again
+:<center>Definir Casos de\nUso Principales;
+end fork
+:<center>Elaborar especificaciones\nde Casos de Uso;
+stop
+@enduml

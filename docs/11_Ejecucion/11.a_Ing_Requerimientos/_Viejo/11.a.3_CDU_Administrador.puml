@@ -1,0 +1,53 @@
+@startuml
+title Casos de Uso principales (Administrador)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor "Administrador" as admin
+
+rectangle "Plataforma de Oficios" {
+    usecase "Iniciar sesión" as iniciarSesion
+
+    usecase "Moderar contenido" as moderarContenido
+    usecase "Gestionar reseñas inapropiadas" as gestionarResenas
+    usecase "Gestionar reportes de usuarios" as gestionarReportes
+
+    usecase "Gestionar disputas" as gestionarDisputas
+    usecase "Intervenir en contratación conflictiva" as intervenirContratacion
+    usecase "Emitir resolución de disputa" as emitirResolucion
+
+    usecase "Ver métricas de la plataforma" as verMetricas
+    usecase "Ver contrataciones activas" as verContratacionesActivas
+    usecase "Ver prestadores pendientes de verificación" as verPrestadoresPendientes
+
+    usecase "Verificar identidad del prestador" as verificarIdentidadPrestador
+    usecase "Revisar documentación cargada" as revisarDocumentacion
+    usecase "Consultar organismos reguladores" as consultarOrganismos
+    usecase "Habilitar prestador" as habilitarPrestador
+    usecase "Suspender prestador" as suspenderPrestador
+}
+
+admin --> iniciarSesion
+admin --> verificarIdentidadPrestador
+admin --> habilitarPrestador
+admin --> suspenderPrestador
+admin --> moderarContenido
+admin --> gestionarDisputas
+admin --> verMetricas
+
+verificarIdentidadPrestador ..> revisarDocumentacion : <<include>>
+verificarIdentidadPrestador ..> consultarOrganismos : <<include>>
+verificarIdentidadPrestador ..> habilitarPrestador : <<extend>>
+verificarIdentidadPrestador ..> suspenderPrestador : <<extend>>
+
+moderarContenido ..> gestionarResenas : <<extend>>
+moderarContenido ..> gestionarReportes : <<extend>>
+
+gestionarDisputas ..> intervenirContratacion : <<include>>
+gestionarDisputas ..> emitirResolucion : <<include>>
+
+verMetricas ..> verContratacionesActivas : <<extend>>
+verMetricas ..> verPrestadoresPendientes : <<extend>>
+
+@enduml

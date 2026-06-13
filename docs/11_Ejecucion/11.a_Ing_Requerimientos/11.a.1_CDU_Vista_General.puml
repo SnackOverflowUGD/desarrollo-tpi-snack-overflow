@@ -1,0 +1,81 @@
+@startuml
+title Casos de Uso — Vista general (modelo del documento)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Cliente as C
+actor Prestador as P
+actor Administrador as A
+actor "Pasarela\nde Pagos" as PP <<sistema externo>>
+actor "Organismo\nRegulador" as OR <<sistema externo>>
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  ' --- Exclusivos de Cliente ---
+  usecase "UC04\nBuscar prestadores" as UC04
+  usecase "UC07\nSolicitar contratación" as UC07
+  usecase "UC12\nPagar servicio" as UC12
+  usecase "UC14\nCalificar prestador" as UC14
+  usecase "UC21\nResponder propuesta\nde prestador" as UC21
+
+  ' --- Compartidos Cliente + Prestador (en el límite entre ambos) ---
+  usecase "UC01\nRegistrarse" as UC01
+  usecase "UC03\nGestionar perfil" as UC03
+  usecase "UC10\nCancelar contratación" as UC10
+  usecase "UC11\nIntercambiar mensajes" as UC11
+
+  ' --- Exclusivos de Prestador ---
+  usecase "UC05\nPublicar servicios" as UC05
+  usecase "UC06\nGestionar agenda\ny disponibilidad" as UC06
+  usecase "UC08\nEnviar propuesta\no rechazar solicitud" as UC08
+  usecase "UC13\nConfirmar finalización\ny liberar pago" as UC13
+  usecase "UC15\nResponder reseña" as UC15
+  usecase "UC20\nIniciar servicio" as UC20
+
+  ' --- Exclusivos de Administrador ---
+  usecase "UC16\nModerar reseñas" as UC16
+  usecase "UC17\nGestionar perfiles\n(suspensión / baja)" as UC17
+  usecase "UC18\nVerificar habilitaciones\nprofesionales" as UC18
+
+  ' --- Auxiliares (sin actor directo: comportamiento interno del sistema) ---
+  usecase "UC09\nGestionar estados\nde la contratación" as UC09
+  usecase "UC19\nNotificar cambio\nde estado" as UC19
+}
+
+C --> UC01
+C --> UC03
+C --> UC04
+C --> UC07
+C --> UC21
+C --> UC10
+C --> UC11
+C --> UC12
+C --> UC14
+
+P --> UC01
+P --> UC03
+P --> UC05
+P --> UC06
+P --> UC08
+P --> UC10
+P --> UC11
+P --> UC13
+P --> UC15
+P --> UC20
+
+A --> UC16
+A --> UC17
+A --> UC18
+
+' Precondición común (no se diagrama): los CU con sesión requieren «UC02 Autenticarse».
+' UC09 «include» UC19: toda transición válida notifica a ambas partes de forma incondicional (RF-6.5).
+UC19 <.. UC09 : <<include>>
+
+
+UC09 -[hidden]-> PP
+UC09 -[hidden]-> OR
+
+UC12 --> PP
+UC13 --> PP
+UC18 --> OR
+@enduml

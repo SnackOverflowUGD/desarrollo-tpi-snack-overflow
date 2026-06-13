@@ -1,0 +1,53 @@
+@startuml
+title 11.b — Vista lógica · Alternativa A: Monolito en capas (Layered + MVC)
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+skinparam componentStyle uml2
+
+actor "Cliente / Prestador\n/ Administrador" as Usuario
+
+package "Capa de Presentación" as P {
+  component "SPA Next.js + React\n(patrón MVC)" as SPA
+}
+
+package "Capa de Aplicación — Backend NestJS (único desplegable)" as A {
+  component "Gestión de\nUsuarios" as MUsr
+  component "Catálogo y\nBúsqueda" as MCat
+  component "Contratación y\nEstados" as MCon
+  component "Pagos" as MPag
+  component "Reputación y\nModeración" as MRep
+  component "Habilitaciones" as MHab
+  component "Notificaciones" as MNot
+}
+
+package "Capa de Acceso a Datos" as D {
+  component "Repositorios\n(ORM)" as Repo
+}
+
+database "PostgreSQL\n(esquema único)" as PG
+database "Redis\n(caché / sesiones)" as RD
+
+cloud "Mercado Pago" as MP <<sistema externo>>
+cloud "Proveedor de\nMensajería" as MS <<sistema externo>>
+cloud "Organismo\nRegulador" as OR <<sistema externo>>
+
+Usuario --> SPA
+SPA --> A : API REST
+
+MUsr --> Repo
+MCat --> Repo
+MCon --> Repo
+MPag --> Repo
+MRep --> Repo
+MHab --> Repo
+MNot --> Repo
+
+MCat ..> RD : caché de búsquedas
+Repo --> PG
+
+' Integraciones invocadas directamente desde los módulos de negocio
+MPag --> MP
+MNot --> MS
+MHab --> OR
+@enduml

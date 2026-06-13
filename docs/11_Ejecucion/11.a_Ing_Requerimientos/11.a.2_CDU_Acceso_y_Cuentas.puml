@@ -1,0 +1,25 @@
+@startuml
+title Casos de Uso — Acceso y gestión de cuentas (RF-1)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Cliente as C
+actor Prestador as P
+actor Administrador as A
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  usecase "UC01\nRegistrarse" as UC01
+  usecase "UC03\nGestionar perfil" as UC03
+  usecase "UC17\nGestionar perfiles\n(suspensión / baja)" as UC17
+}
+
+C --> UC01
+P --> UC01
+C --> UC03
+P --> UC03
+A --> UC17
+
+' Precondición común (no se diagrama): UC03 y UC17 requieren «UC02 Autenticarse».
+' Nota (UC01): Acceso público — no requiere sesión iniciada.
+@enduml

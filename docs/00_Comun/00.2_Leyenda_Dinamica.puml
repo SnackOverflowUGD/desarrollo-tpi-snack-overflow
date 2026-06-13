@@ -1,0 +1,26 @@
+@startuml
+!include 00.0_Estilo_Comun.iuml
+
+start
+note left:Inicio de actividad
+repeat
+:Nodo de Actividad;
+repeat while (<center>Nodo de decisión\n(Bucle)) is (Repetir) not (Salir del bucle)
+
+fork
+:<center>Actividades\nen paralelo;
+fork again
+:<center>Actividades\nen paralelo;
+note left:<center>Ambas actividades\ndeben finalizar para\nseguir con el proceso
+end fork
+
+if (<center> Nodo de decisión\n(Si-No)) then (Si)
+:Actividad 1;
+else (No)
+:Actividad 2;
+note left:<center>Las actividades son\nmútuamente excluyentes
+endif
+stop
+note left:Final de actividad
+
+@enduml

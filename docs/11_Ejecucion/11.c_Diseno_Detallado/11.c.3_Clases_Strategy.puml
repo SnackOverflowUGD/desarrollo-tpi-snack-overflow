@@ -1,0 +1,28 @@
+@startuml
+title 11.c — Clases de diseño · Patrón Strategy (orden de resultados de búsqueda)
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+' Strategy (comportamiento): familia de algoritmos intercambiables en runtime.
+' Misma estructura reutilizable para cálculo de reputación y política de cancelación.
+
+class BuscadorPrestadores {
+  - estrategia : EstrategiaRanking
+  + setEstrategia(e : EstrategiaRanking)
+  + buscar(criterios) : Prestador[*]
+}
+
+interface EstrategiaRanking {
+  + ordenar(prestadores : Prestador[*]) : Prestador[*]
+}
+
+class RankingPorCercania
+class RankingPorReputacion
+class RankingPorPrecio
+
+EstrategiaRanking <|.. RankingPorCercania
+EstrategiaRanking <|.. RankingPorReputacion
+EstrategiaRanking <|.. RankingPorPrecio
+
+BuscadorPrestadores o--> EstrategiaRanking : <<Strategy>> Context
+@enduml

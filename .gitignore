@@ -155,3 +155,5 @@ redis_data/
 .engram/
 .ai/engram/
 .ai/logs/
+# Local tooling
+.atl/

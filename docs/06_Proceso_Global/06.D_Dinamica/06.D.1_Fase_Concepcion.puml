@@ -1,0 +1,22 @@
+@startuml
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+start
+fork
+:<center>Generar Documento\nde Visión;
+fork again
+:<center>Generar Glosario\nde Dominio;
+fork again
+:<center>Generar Lista\nde Riesgo inicial;
+end fork
+
+fork
+    :<center>Identificar y\nRefinar Requisitos;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del Proceso\nde Ingeniería de Requisitos
+fork again
+    :<center>Configurar y Refinar\nMemoria Persistente;
+fork again
+    :<center>Crear Work\nItem List inicial;
+endfork
+stop
+@enduml

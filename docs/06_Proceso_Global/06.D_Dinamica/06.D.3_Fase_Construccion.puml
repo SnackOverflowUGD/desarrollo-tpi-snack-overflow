@@ -1,0 +1,23 @@
+@startuml
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+' FASE CONSTRUCTION
+start
+:Planeamiento de Iteración;
+fork
+    :<center>Identificar y\nRefinar Requisitos;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del Proceso\nde Ingeniería de Requisitos
+fork again
+package Proceso de Desarrollo {
+    :<center>Comenzar\nnuevo Sprint;
+    :<center>Asignar Work Items\na iteración;
+    :<center>Desarrollar Sprint;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del\nProceso de Desarrollo\nde Sprint
+}
+fork again
+    :<center>Configurar y Refinar\nMemoria Persistente;
+fork again
+    :<center>Desarrollar documentación\ndel proyecto;
+endfork
+stop
+
+@enduml

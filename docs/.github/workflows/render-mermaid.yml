@@ -1,0 +1,63 @@
+name: Render Diagrams
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.mmd'
+      - '**/*.puml'
+      - 'scripts/render-diagrams.sh'
+      - '.github/workflows/render-mermaid.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-diagrams-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Install oxipng
+        env:
+          OXIPNG_VERSION: 10.1.1
+        run: |
+          curl -fsSL "https://github.com/shssoichiro/oxipng/releases/download/v${OXIPNG_VERSION}/oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz
+          sudo install -m 755 "oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl/oxipng" /usr/local/bin/oxipng
+          rm -rf "oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl"
+          oxipng --version
+
+      - name: Render diagrams
+        id: render
+        continue-on-error: true
+        run: bash scripts/render-diagrams.sh
+
+      - name: Commit and push PNGs
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          find . -name '*.png' -not -path './.git/*' -not -path './node_modules/*' -print0 \
+            | xargs -0 -r git add --
+          if git diff --cached --quiet; then
+            echo "No diagram changes to commit"
+          else
+            git commit -m "chore: re-render diagrams"
+            git push
+          fi
+
+      - name: Fail if any diagram failed to render
+        if: steps.render.outcome == 'failure'
+        run: |
+          echo "::error::One or more diagrams failed to render. See 'Render diagrams' step for details."
+          exit 1

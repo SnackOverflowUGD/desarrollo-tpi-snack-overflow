@@ -1,0 +1,18 @@
+@startuml
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+
+' FASE TRANSITION
+start
+:Planeamiento de Iteración;
+fork
+    :<center>Realizar proceso\nde verificación;
+    note right:<center>Se desarrolla en\nel Meta-Modelo del\nProceso de Verificación
+fork again
+    :<center>Finalizar documentación\ndel proyecto;
+fork again
+    :<center>Prepararse para\nel despliegue;
+endfork
+:<center>Desplegar\nversión;
+stop
+@enduml

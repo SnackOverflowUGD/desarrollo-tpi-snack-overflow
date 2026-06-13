@@ -1,0 +1,48 @@
+---
+title: Meta-modelo de Diseño
+config:
+    layout: elk
+    class:
+        hideEmptyMembersBox: true
+    theme: neutral
+---
+
+classDiagram
+class Arquitecto["Arquitecto"]:::rol {
+    <<Rol>>
+}
+
+class ArquitecturaSoftware["Arquitectura de Software"]:::artefacto {
+    <<Artefacto>>
+}
+
+class PatronesDisenio["Patrón de Diseño"]:::artefacto {
+    <<Artefacto>>
+}
+
+class BaseDatos["Modelo de Base de Datos"]:::artefacto {
+    <<Artefacto>>
+}
+
+class Interfaz["Interfaz"]:::artefacto {
+    <<Artefacto>>
+}
+
+class ADR["Architecture Decision Record (ADR)"]:::artefacto {
+    <<Artefacto>>
+}
+
+%% === RELACIONES ===
+
+Arquitecto --> ArquitecturaSoftware : Evalúa alternativas
+Arquitecto --> PatronesDisenio : Evalúa alternativas
+Arquitecto --> BaseDatos : Diseña
+Arquitecto --> Interfaz : Diseña
+Arquitecto --> ADR : Registra
+
+classDef proceso fill:#D6DBDF,stroke:#48515B,color:#1F2328
+classDef fase fill:#A2D9CE,stroke:#0E6655,color:#1a0033
+classDef disciplina fill:#F9E79F,stroke:#C5A00D,color:#1a0f00
+classDef evento fill:#E7A274,stroke:#D96E26,color:#1a1400 
+classDef rol fill:#E1CDE9,stroke:#2c2570,color:#001a1e
+classDef artefacto fill: #9BCDED,stroke:#21618C,color:#001a1e

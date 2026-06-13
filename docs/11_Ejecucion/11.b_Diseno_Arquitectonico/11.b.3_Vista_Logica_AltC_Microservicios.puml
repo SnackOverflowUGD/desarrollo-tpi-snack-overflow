@@ -1,0 +1,66 @@
+@startuml
+title 11.b — Vista lógica · Alternativa C: Microservicios orientados a eventos (Event-Driven + API Gateway + Broker)
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+skinparam componentStyle uml2
+
+actor "Cliente / Prestador\n/ Administrador" as Usuario
+
+package "Capa de Presentación" as P {
+  component "SPA Next.js + React\n(patrón MVC)" as SPA
+}
+
+component "API Gateway" as GW
+
+package "Servicios independientes (database-per-service)" as SVCS {
+  component "Servicio\nUsuarios" as SUsr
+  component "Servicio\nCatálogo" as SCat
+  component "Servicio\nContratación" as SCon
+  component "Servicio\nPagos" as SPag
+  component "Servicio\nHabilitaciones" as SHab
+  component "Servicio\nReputación" as SRep
+  component "Servicio\nNotificaciones" as SNot
+}
+
+database "DB Usuarios" as DBu
+database "DB Catálogo" as DBc
+database "DB Contratación" as DBn
+database "DB Pagos" as DBp
+database "DB Habilitac." as DBh
+database "DB Reputación" as DBr
+
+queue "Bus de eventos\n(Message Broker)" as BUS
+
+cloud "Mercado Pago" as MP <<sistema externo>>
+cloud "Proveedor de\nMensajería" as MS <<sistema externo>>
+cloud "Organismo\nRegulador" as OR <<sistema externo>>
+
+Usuario --> SPA
+SPA --> GW : API REST
+GW --> SUsr
+GW --> SCat
+GW --> SCon
+GW --> SPag
+GW --> SHab
+GW --> SRep
+
+SUsr --> DBu
+SCat --> DBc
+SCon --> DBn
+SPag --> DBp
+SHab --> DBh
+SRep --> DBr
+
+' Publicación de eventos (asíncrona)
+SCon ..> BUS
+SPag ..> BUS
+SHab ..> BUS
+' Suscripción a eventos
+BUS ..> SRep
+BUS ..> SNot
+
+SPag --> MP
+SHab --> OR
+SNot --> MS
+@enduml

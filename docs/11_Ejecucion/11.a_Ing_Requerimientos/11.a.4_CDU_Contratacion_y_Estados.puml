@@ -1,0 +1,37 @@
+@startuml
+title Casos de Uso — Contratación, ciclo de estados y mensajería (RF-5, RF-6)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Cliente as C
+actor Prestador as P
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  usecase "UC07\nSolicitar contratación" as UC07
+  usecase "UC08\nEnviar propuesta\no rechazar solicitud" as UC08
+  usecase "UC09\nGestionar estados\nde la contratación" as UC09
+  usecase "UC10\nCancelar contratación" as UC10
+  usecase "UC11\nIntercambiar mensajes" as UC11
+  usecase "UC19\nNotificar cambio\nde estado" as UC19
+  usecase "UC20\nIniciar servicio" as UC20
+  usecase "UC21\nResponder propuesta\nde prestador" as UC21
+}
+
+C --> UC07
+P --> UC08
+C --> UC21
+C --> UC10
+P --> UC10
+C --> UC11
+P --> UC11
+P --> UC20
+
+' Precondición común (no se diagrama): UC07, UC08, UC10, UC11, UC20 y UC21 requieren «UC02 Autenticarse».
+UC09 ..> UC19 : <<include>>
+
+' Nota (UC09): Comportamiento del sistema — centraliza la máquina de estados de la
+' contratación. Las transiciones se disparan desde UC07, UC08, UC21, UC20, UC10 y UC13.
+' Nota (UC09 «include» UC19): toda transición válida notifica a ambas partes de forma
+' incondicional (RF-6.5); por eso es «include» y no «extend». Detalle en la especificación de UC09.
+@enduml

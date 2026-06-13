@@ -1,0 +1,39 @@
+@startuml
+title Verificación
+
+!include ../00_Comun/00.0_Estilo_Comun.iuml
+
+!define ProDes <center>Proceso de Desarrollo
+!define SubVer <center>Subagente Verificador
+!define CI <center>CI/CD
+!define Tes <center>Tester
+|ProDes|
+|SubVer|
+|CI|
+|Tes|
+
+|ProDes|
+start
+repeat
+    :Comenzar sprint;
+    repeat
+        :Seleccionar Work Item;
+        repeat
+            :Realizar micro-incremento;
+            |SubVer|
+            :Test Unitario;
+            |ProDes|
+        repeat while (¿Micro-incrementos pendientes?) is (Si) not (No) 
+        :Completar Work Item;
+        |CI|
+        :Test de Integración;
+        |ProDes|
+    repeat while (¿Work Items pendientes?) is (Si) not (No)
+    :Integración continua del incremento;
+    |Tes|
+    :Test de Sistema;
+    |ProDes|
+repeat while (¿Sprints pendientes?) is (Si) not (No)
+
+stop
+@enduml

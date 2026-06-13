@@ -1,0 +1,77 @@
+---
+config:
+  layout: elk
+  class:
+    hideEmptyMembersBox: true
+  theme: neutral
+title: Meta-modelo de Verificacion
+---
+classDiagram
+class CoordinadorIA["Coordinador de IA"]:::rol {
+    <<Rol>>
+}
+
+class SubVer["Subagente Verificador"]:::rol {
+    <<Rol>>
+}
+
+class Tester["Tester"]:::rol {
+    <<Rol>>
+}
+
+class Desarrollador["Desarrollador"]:::rol {
+    <<Rol>>
+}
+
+class TestUnitario["Test Unitario"]:::artefacto {
+    <<Artefacto>>
+}
+
+class MicroIncremento["Micro-incremento"]:::artefacto {
+    <<Artefacto>>
+}
+
+class TestIntegracion["Test de Integración"]:::artefacto {
+    <<Artefacto>>
+}
+
+class WorkItem["Work Item"]:::artefacto {
+    <<Artefacto>>
+}
+
+class TestSistema["Test de Sistema"]:::artefacto {
+    <<Artefacto>>
+}
+
+class ProductoSoftware["Producto de Software"]:::artefacto {
+    <<Artefacto>>
+}
+
+class TestAutomatizado["Test Automatizado"]:::artefacto {
+    <<Artefacto>>
+}
+
+class TestManual["Test Manual"]:::artefacto {
+    <<Artefacto>>
+}
+
+TestAutomatizado *-- TestUnitario
+TestManual *-- TestIntegracion
+TestManual *-- TestSistema
+
+%% === RELACIONES ===
+Tester --> TestManual : Genera y Realiza
+SubVer --> TestAutomatizado : Genera y Realiza
+Desarrollador --> TestAutomatizado : Valida
+
+CoordinadorIA *-- SubVer : Coordina
+TestUnitario --> MicroIncremento : Verifica
+TestIntegracion --> WorkItem : Verifica
+TestSistema --> ProductoSoftware : Verifica
+
+classDef proceso fill:#D6DBDF,stroke:#48515B,color:#1F2328
+classDef fase fill:#A2D9CE,stroke:#0E6655,color:#1a0033
+classDef disciplina fill:#F9E79F,stroke:#C5A00D,color:#1a0f00
+classDef evento fill:#E7A274,stroke:#D96E26,color:#1a1400 
+classDef rol fill:#E1CDE9,stroke:#2c2570,color:#001a1e
+classDef artefacto fill: #9BCDED,stroke:#21618C,color:#001a1e

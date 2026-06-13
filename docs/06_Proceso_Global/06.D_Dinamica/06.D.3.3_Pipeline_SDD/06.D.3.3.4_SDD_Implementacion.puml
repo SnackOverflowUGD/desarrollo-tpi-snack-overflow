@@ -1,0 +1,25 @@
+@startuml
+!include ../../../00_Comun/00.0_Estilo_Comun.iuml
+
+!define Coo <center>Coordinador IA
+!define SubImp <center>Subagente\nde Implementación
+
+|Coo|
+|SubImp|
+
+|Coo|
+start
+
+repeat
+    :<center>Instanciar Subagente\nde Implementación;
+    |SubImp|
+    :<center>Consultar Memoria\nPersistente;
+    :<center>Genera Código\nFuente;
+    :<center>Registrar en Memoria\nPersistente;
+    |Desarrollador|
+    :<center>Verifica y Valida\nCódigo Fuente;
+    backward :<center>Comunicar observaciones;
+repeat while (<center>¿Respeta las convenciones\nde código e implementa\ncorrectamente el diseño?) is (<center>No) not (<center>Sí)
+
+stop
+@enduml

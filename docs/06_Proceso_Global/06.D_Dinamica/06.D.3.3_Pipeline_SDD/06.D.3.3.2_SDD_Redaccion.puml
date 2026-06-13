@@ -1,0 +1,33 @@
+@startuml
+!include ../../../00_Comun/00.0_Estilo_Comun.iuml
+
+!define Dev <center>Desarrollador  
+!define Coo <center>Coordinador IA
+!define SubRed <center>Subagente\nRedactor
+!define SubDis <center>Subagente\nde Diseño
+!define SubImp <center>Subagente\nde Implementación
+!define SubVer <center>Subagente\nVerificador
+!define Tes <center>Tester
+
+|Coo|
+|SubRed|
+|Dev|
+
+|Coo|
+' PIPELINE SDD
+start
+
+repeat
+    |Coo|
+    :<center>Instanciar Subagente\nRedactor;
+    |SubRed|
+    :<center>Consultar Memoria\nPersistente;
+    :<center>Genera Spec\nEjecutable;
+    :<center>Registrar en Memoria\nPersistente;
+    |Dev|
+    :<center>Verifica y Valida\nSpec Ejecutable;
+    backward :<center>Comunicar observaciones;
+repeat while (<center>¿La spec es\ntécnicamente viable?) is (<center>No) not (<center>Sí)
+
+stop
+@enduml

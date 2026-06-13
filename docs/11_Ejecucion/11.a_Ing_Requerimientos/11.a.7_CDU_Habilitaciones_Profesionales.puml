@@ -1,0 +1,18 @@
+@startuml
+title Casos de Uso — Verificación de habilitaciones profesionales (RF-8)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Administrador as A
+actor "Organismo\nRegulador" as OR <<sistema externo>>
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  usecase "UC18\nVerificar habilitaciones\nprofesionales" as UC18
+}
+
+A --> UC18
+
+' Precondición común (no se diagrama): UC18 requiere «UC02 Autenticarse».
+UC18 --> OR
+@enduml

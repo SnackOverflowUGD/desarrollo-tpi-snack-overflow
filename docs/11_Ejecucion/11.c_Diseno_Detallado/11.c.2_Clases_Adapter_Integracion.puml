@@ -1,0 +1,40 @@
+@startuml
+title 11.c — Clases de diseño · Patrón Adapter (+ Factory) en la capa de integración
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+' Adapter realiza la capa Broker / puertos-y-adaptadores de ADR-02 (11.b):
+' aísla la API del proveedor externo detrás de un puerto estable (RNF-M.4).
+
+class ModuloPagos {
+  + pagar(c : Contratacion)
+  + liberar(c : Contratacion)
+}
+
+interface PasarelaPago <<puerto>> {
+  + cobrar(monto) : Resultado
+  + liberar(monto) : Resultado
+  + consultarEstado(ref) : Estado
+}
+
+class AdaptadorMercadoPago {
+  + cobrar(monto) : Resultado
+  + liberar(monto) : Resultado
+  + consultarEstado(ref) : Estado
+}
+
+class FabricaPasarela <<Factory>> {
+  + crear(config) : PasarelaPago
+}
+
+class "SDK Mercado Pago" as SDKMP <<sistema externo>> {
+  + createPayment()
+  + refund()
+}
+
+ModuloPagos --> PasarelaPago : usa el puerto
+ModuloPagos ..> FabricaPasarela : solicita instancia
+FabricaPasarela ..> PasarelaPago : <<create>>
+PasarelaPago <|.. AdaptadorMercadoPago
+AdaptadorMercadoPago --> SDKMP : adapta (Adaptee)
+@enduml

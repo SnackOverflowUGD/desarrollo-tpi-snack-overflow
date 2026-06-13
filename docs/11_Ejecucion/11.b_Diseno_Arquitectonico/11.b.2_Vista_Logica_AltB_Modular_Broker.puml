@@ -1,0 +1,67 @@
+@startuml
+title 11.b — Vista lógica · Alternativa B: Monolito modular + Broker (Puertos y Adaptadores)
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+skinparam componentStyle uml2
+
+actor "Cliente / Prestador\n/ Administrador" as Usuario
+
+package "Capa de Presentación" as P {
+  component "SPA Next.js + React\n(patrón MVC)" as SPA
+}
+
+package "Capa de Aplicación — Backend NestJS modular" as A {
+  component "Fachada REST\n(API Gateway interno)" as GW
+
+  package "Módulos de negocio (interfaces estables)" as Neg {
+    component "Gestión de\nUsuarios" as MUsr
+    component "Catálogo y\nBúsqueda" as MCat
+    component "Contratación y\nEstados" as MCon
+    component "Pagos" as MPag
+    component "Reputación y\nModeración" as MRep
+    component "Habilitaciones" as MHab
+    component "Notificaciones" as MNot
+  }
+
+  package "Capa de Integración (Broker)" as Brk {
+    component "Adaptador\nPagos" as APag
+    component "Adaptador\nMensajería" as AMsg
+    component "Adaptador\nHabilitaciones" as AHab
+  }
+}
+
+package "Capa de Acceso a Datos" as D {
+  component "Repositorios\n(ORM)" as Repo
+}
+
+database "PostgreSQL" as PG
+database "Redis\n(caché / sesiones)" as RD
+
+cloud "Mercado Pago" as MP <<sistema externo>>
+cloud "Proveedor de\nMensajería" as MS <<sistema externo>>
+cloud "Organismo\nRegulador" as OR <<sistema externo>>
+
+Usuario --> SPA
+SPA --> GW : API REST
+GW --> Neg
+
+MUsr --> Repo
+MCat --> Repo
+MCon --> Repo
+MPag --> Repo
+MRep --> Repo
+MHab --> Repo
+MNot --> Repo
+MCat ..> RD : caché de búsquedas
+Repo --> PG
+
+' Los módulos dependen del puerto (interface), no del proveedor concreto
+MPag --> APag
+MNot --> AMsg
+MHab --> AHab
+
+APag --> MP
+AMsg --> MS
+AHab --> OR
+@enduml

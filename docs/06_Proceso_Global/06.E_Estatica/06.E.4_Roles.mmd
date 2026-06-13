@@ -1,0 +1,59 @@
+---
+config:
+    layout: elk
+    class:
+        hideEmptyMembersBox: true
+    theme: neutral
+---
+classDiagram
+
+class Rol["Rol"]:::rol {
+    <<Rol>>
+}
+class AdminProyecto["Admin. Proyecto"]:::rol {
+    <<Rol>>
+}
+class Analista["Analista"]:::rol {
+    <<Rol>>
+}
+class Arquitecto["Arquitecto"]:::rol {
+    <<Rol>>
+}
+class Tester["Tester"]:::rol {
+    <<Rol>>
+}
+class EquipoDesarrollo["Equipo de Desarrollo"]:::rol {
+    <<Rol>>
+}
+class Desarrollador["Desarrollador"]:::rol {
+    <<Rol>>
+}
+class CoordinadorIA["Coordinador IA"]:::rol {
+    <<Rol>>
+}
+class SubRedactor["Sub-agente Redactor"]:::rol {
+    <<Rol>>
+}
+class SubDiseno["Sub-agente Diseño"]:::rol {
+    <<Rol>>
+}
+class SubImpl["Sub-agente Implementación"]:::rol {
+    <<Rol>>
+}
+class SubVerif["Sub-agente Verificación"]:::rol {
+    <<Rol>>
+}
+
+Rol <|-- AdminProyecto
+Rol <|-- Analista
+Rol <|-- Arquitecto
+Rol <|-- Tester
+Rol <|-- EquipoDesarrollo
+EquipoDesarrollo <|-- Desarrollador
+EquipoDesarrollo <|-- CoordinadorIA
+CoordinadorIA *-- SubRedactor
+CoordinadorIA *-- SubDiseno
+CoordinadorIA *-- SubImpl
+CoordinadorIA *-- SubVerif
+
+classDef rol fill:#E1CDE9,stroke:#2c2570,color:#001a1e

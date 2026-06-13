@@ -1,0 +1,22 @@
+@startuml
+title Casos de Uso — Pagos y liberación (RF-7)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Cliente as C
+actor Prestador as P
+actor "Pasarela\nde Pagos" as PP <<sistema externo>>
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  usecase "UC12\nPagar servicio" as UC12
+  usecase "UC13\nConfirmar finalización\ny liberar pago" as UC13
+}
+
+C --> UC12
+P --> UC13
+
+' Precondición común (no se diagrama): UC12 y UC13 requieren «UC02 Autenticarse».
+UC12 --> PP
+UC13 --> PP
+@enduml

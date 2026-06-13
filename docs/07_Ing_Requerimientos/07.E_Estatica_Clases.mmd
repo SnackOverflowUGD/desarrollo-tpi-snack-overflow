@@ -1,0 +1,57 @@
+---
+config:
+  layout: elk
+  class:
+    hideEmptyMembersBox: true
+  theme: neutral
+title: Meta-modelo Ingeniería de Requerimientos
+---
+classDiagram
+class Analista["Analista"]:::rol {
+    <<Rol>>
+}
+
+class AdministradorProyecto["Administrador de Proyecto"]:::rol {
+    <<Rol>>
+}
+
+class DocumentoDeVision["Documento de Visión"]:::artefacto {
+    <<Artefacto>>
+}
+
+class GlosarioDominio["Glosario de Dominio"]:::artefacto {
+    <<Artefacto>>
+}
+
+class CasoDeUso["Caso de Uso"]:::artefacto {
+    <<Artefacto>>
+}
+
+class ListaDeRiesgos["Lista de Riesgos"]:::artefacto {
+    <<Artefacto>>
+}
+
+class WorkItemList["Work Item List"]:::artefacto {
+    <<Artefacto>>
+}
+
+class MemoriaPersistente["Memoria Persistente"]:::artefacto {
+    <<Artefacto>>
+}
+
+Analista --> DocumentoDeVision       : elabora
+Analista --> GlosarioDominio         : mantiene
+Analista --> CasoDeUso               : elabora y detalla
+Analista --> ListaDeRiesgos          : actualiza
+
+AdministradorProyecto --> WorkItemList      : prioriza y actualiza
+
+CasoDeUso --> WorkItemList           : origina items en
+CasoDeUso --> MemoriaPersistente     : se persiste en
+
+classDef proceso fill:#D6DBDF,stroke:#48515B,color:#1F2328
+classDef fase fill:#A2D9CE,stroke:#0E6655,color:#1a0033
+classDef disciplina fill:#F9E79F,stroke:#C5A00D,color:#1a0f00
+classDef evento fill:#E7A274,stroke:#D96E26,color:#1a1400 
+classDef rol fill:#E1CDE9,stroke:#2c2570,color:#001a1e
+classDef artefacto fill: #9BCDED,stroke:#21618C,color:#001a1e

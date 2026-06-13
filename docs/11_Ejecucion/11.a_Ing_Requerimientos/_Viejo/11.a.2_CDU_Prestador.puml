@@ -1,0 +1,57 @@
+@startuml
+title Casos de Uso principales (Prestador)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor "Prestador" as prestador
+
+rectangle "Plataforma de Oficios" {
+
+  usecase "Registrarse / Iniciar sesión" as login
+  usecase "Cargar habilitaciones profesionales" as cargarHabilitaciones
+
+  usecase "Marcar servicio en curso" as marcarServicioEnCurso
+  usecase "Marcar servicio finalizado" as marcarServicioFinalizado
+  usecase "Calificar al cliente" as calificarCliente
+
+  usecase "Gestionar perfil" as gestionarPerfil
+  usecase "Definir oficios y tarifas" as definirOficiosTarifas
+  usecase "Definir zona de cobertura" as definirZonaCobertura
+
+  usecase "Gestionar solicitudes de contratación" as gestionarSolicitudes
+  usecase "Aceptar solicitud" as aceptarSolicitud
+  usecase "Rechazar solicitud" as rechazarSolicitud
+
+  usecase "Gestionar disponibilidad horaria" as gestionarDisponibilidad
+  usecase "Agregar franja horaria" as agregarFranjaHoraria
+  usecase "Eliminar franja horaria" as eliminarFranjaHoraria
+
+  usecase "Ver historial de contrataciones" as verHistorialContrataciones
+  usecase "Ver reputación y calificaciones recibidas" as verReputacion
+}
+
+prestador ----> login
+prestador --> cargarHabilitaciones
+prestador --> gestionarPerfil
+prestador --> gestionarDisponibilidad
+prestador --> gestionarSolicitudes
+prestador --> marcarServicioEnCurso
+prestador --> marcarServicioFinalizado
+prestador --> verHistorialContrataciones
+prestador --> verReputacion
+
+cargarHabilitaciones ..> login : <<include>>
+
+gestionarPerfil ..> definirOficiosTarifas : <<extend>>
+gestionarPerfil ..> definirZonaCobertura : <<extend>>
+
+gestionarDisponibilidad ..> agregarFranjaHoraria : <<extend>>
+gestionarDisponibilidad ..> eliminarFranjaHoraria : <<extend>>
+
+gestionarSolicitudes ..> aceptarSolicitud : <<extend>>
+gestionarSolicitudes ..> rechazarSolicitud : <<extend>>
+
+marcarServicioFinalizado ..> calificarCliente : <<include>>
+
+@enduml

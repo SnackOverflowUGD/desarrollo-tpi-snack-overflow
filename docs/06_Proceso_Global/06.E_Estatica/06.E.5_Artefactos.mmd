@@ -1,0 +1,123 @@
+---
+config:
+    layout: elk
+    class:
+        hideEmptyMembersBox: true
+    theme: neutral
+---
+classDiagram
+class Artefacto["Artefacto"]:::artefacto {
+    <<Artefacto>>
+}
+class DocVision["Doc. Visión"]:::artefacto {
+    <<Artefacto>>
+}
+class Glosario["Glosario"]:::artefacto {
+    <<Artefacto>>
+}
+class CasoUso["Caso de Uso"]:::artefacto {
+    <<Artefacto>>
+}
+class Especificacion["Especificación"]:::artefacto {
+    <<Artefacto>>
+}
+class ListaRiesgos["Lista de Riesgos"]:::artefacto {
+    <<Artefacto>>
+}
+class WorkItemList["Work Item List"]:::artefacto {
+    <<Artefacto>>
+}
+class SprintBacklog["Sprint Backlog"]:::artefacto {
+    <<Artefacto>>
+}
+class EspecEjecutable["Espec. Ejecutable"]:::artefacto {
+    <<Artefacto>>
+}
+class ADR["ADR"]:::artefacto {
+    <<Artefacto>>
+}
+class DisenioDetallado["Diseño Detallado"]:::artefacto {
+    <<Artefacto>>
+}
+class CodigoFuente["Código Fuente"]:::artefacto {
+    <<Artefacto>>
+}
+class MicroIncremento["Micro-incremento"]:::artefacto {
+    <<Artefacto>>
+}
+class Incremento["Incremento"]:::artefacto {
+    <<Artefacto>>
+}
+class CriteriosAceptacion["Crit. Aceptación"]:::artefacto {
+    <<Artefacto>>
+}
+class TestAutomatizado["Test Automatizado"]:::artefacto {
+    <<Artefacto>>
+}
+class DoD["Definition of Done"]:::artefacto {
+    <<Artefacto>>
+}
+class MemoriaPersistente["Memoria Persistente"]:::artefacto {
+    <<Artefacto>>
+}
+class ModeloBBDD["Modelo de Base de Datos"]:::artefacto {
+    <<Artefacto>>
+}
+class Interfaz["Interfaz"]:::artefacto {
+    <<Artefacto>>
+}
+class ArquitecturaSoftware["Arquitectura de Software"]:::artefacto {
+    <<Artefacto>>
+}
+class PatronDisenio["Patrón de Diseño"]:::artefacto {
+    <<Artefacto>>
+}
+class Test["Test"]:::artefacto {
+    <<Artefacto>>
+}
+class TestUnitario["Test Unitario"]:::artefacto {
+    <<Artefacto>>
+}
+class TestIntegracion["Test de Integración"]:::artefacto {
+    <<Artefacto>>
+}
+class TestSistema["Test de Sistema"]:::artefacto {
+    <<Artefacto>>
+}
+class ProductoSoftware["Producto de Software"]:::artefacto {
+    <<Artefacto>>
+}
+
+Artefacto <|-- DocVision
+Artefacto <|-- Glosario
+Artefacto <|-- CasoUso
+Artefacto <|-- Especificacion
+Artefacto <|-- ListaRiesgos
+Artefacto <|-- WorkItemList
+Artefacto <|-- SprintBacklog
+Artefacto <|-- EspecEjecutable
+Artefacto <|-- ADR
+Artefacto <|-- DisenioDetallado
+Artefacto <|-- CodigoFuente
+Artefacto <|-- MicroIncremento
+Artefacto <|-- Incremento
+Artefacto <|-- CriteriosAceptacion
+Artefacto <|-- Test
+Artefacto <|-- DoD
+Artefacto <|-- MemoriaPersistente
+Artefacto <|-- ModeloBBDD
+Artefacto <|-- Interfaz
+Artefacto <|-- ArquitecturaSoftware
+Artefacto <|-- PatronDisenio
+Artefacto <|-- ProductoSoftware
+Test <|-- TestAutomatizado
+TestAutomatizado <|-- TestUnitario
+Test <|-- TestIntegracion
+Test <|-- TestSistema
+Especificacion *-- CasoUso
+EspecEjecutable o-- CriteriosAceptacion
+MemoriaPersistente *-- ADR
+Incremento *-- MicroIncremento
+
+
+classDef artefacto fill: #9BCDED,stroke:#21618C,color:#001a1e

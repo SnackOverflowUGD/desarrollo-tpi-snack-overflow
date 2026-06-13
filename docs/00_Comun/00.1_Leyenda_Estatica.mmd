@@ -1,0 +1,27 @@
+---
+config:
+    class:
+        hideEmptyMembersBox: true
+    theme: neutral
+---
+flowchart TB
+
+subgraph "Leyenda (Diagrama de clases)"
+    Fase["«Fase»<br>Objetos relacionados a fases"]
+    Disciplina["«Disciplina»<br>Objetos relacionados a disciplinas"]
+    Evento["«Evento»<br>Objetos relacionados a eventos"]
+    Rol["«Rol»<br>Objetos relacionados a roles"]
+    Artefacto["«Artefacto»<br>Objetos relacionados a artefactos"]
+end
+
+classDef rol fill:#E1CDE9,stroke:Black,color:Black
+classDef fase fill:#A2D9CE,stroke:Black,color:Black
+classDef disciplina fill:#F9E79F,stroke:Black,color:Black
+classDef evento fill:#E7A274,stroke:Black,color:Black
+classDef artefacto fill:#9BCDED,stroke:Black,color:Black
+
+class Rol rol
+class Fase fase
+class Disciplina disciplina
+class Evento evento
+class Artefacto artefacto

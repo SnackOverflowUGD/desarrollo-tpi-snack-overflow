@@ -1,0 +1,22 @@
+@startuml
+title Casos de Uso — Reputación y moderación (RF-3)
+left to right direction
+
+!include ../../00_Comun/00.0_Estilo_Comun.iuml
+
+actor Cliente as C
+actor Prestador as P
+actor Administrador as A
+
+rectangle "Plataforma de Economía Colaborativa Basada en Oficios" {
+  usecase "UC14\nCalificar prestador" as UC14
+  usecase "UC15\nResponder reseña" as UC15
+  usecase "UC16\nModerar reseñas" as UC16
+}
+
+C --> UC14
+P --> UC15
+A --> UC16
+
+' Precondición común (no se diagrama): UC14, UC15 y UC16 requieren «UC02 Autenticarse».
+@enduml
