@@ -141,3 +141,17 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# ==========================================
+# Configuración específica para Snack Overflow
+# ==========================================
+
+# Base de datos local e infraestructura de contenedores (Docker)
+postgres_data/
+redis_data/
+
+# Ecosistema de IA (gentle-ai / engram)
+# Ignoramos la memoria persistente local para evitar conflictos de Git entre el grupo
+.engram/
+.ai/engram/
+.ai/logs/
