@@ -1,4 +1,6 @@
-version: '3.8'
+# Default `docker compose up -d` starts ONLY infra (postgres + redis) — what the
+# test suite and local `npm run start:dev` expect.
+# Full stack (build + run the apps too): `docker compose --profile app up -d --build`.
 
 services:
   postgres:
@@ -12,6 +14,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snack_user -d snack_overflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -20,6 +27,47 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    profiles: ["app"]
+    build: ./server
+    container_name: snack_overflow_api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: snack_user
+      DB_PASSWORD: snack_password
+      DB_NAME: snack_overflow
+      DB_SSL: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      JWT_SECRET: change_me_in_a_real_env
+      APP_BASE_URL: http://localhost:3001
+      NODE_ENV: development
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  client:
+    profiles: ["app"]
+    build: ./client
+    container_name: snack_overflow_web
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3001:3000"
+    depends_on:
+      - server
 
 volumes:
   postgres_data:

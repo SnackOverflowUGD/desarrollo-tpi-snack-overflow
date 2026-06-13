@@ -9,11 +9,11 @@ import * as argon2 from 'argon2';
 import { RegisterDto } from '../dto/register.dto.js';
 import { RegisterResponseDto } from '../dto/register-response.dto.js';
 import {
-  IRegulatedTradeRepository,
+  type IRegulatedTradeRepository,
   REGULATED_TRADE_REPOSITORY,
 } from '../ports/regulated-trade.repository.port.js';
 import {
-  IUserRepository,
+  type IUserRepository,
   USER_REPOSITORY,
 } from '../ports/user.repository.port.js';
 import { ProviderStatus } from '../domain/provider-status.enum.js';
