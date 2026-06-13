@@ -36,8 +36,11 @@ export class Prestador {
   @Column('int', { name: 'cantidad_resenas', default: 0 })
   cantidadResenas!: number;
 
+  // Stored as the CoberturaZona.toJSON() shape ({ geometry, localidad }); the
+  // jsonb round-trips a plain object, never a class instance. getCoberturaZona()
+  // rehydrates it into a CoberturaZona.
   @Column('jsonb', { name: 'zona_cobertura', nullable: true })
-  zonaCobertura!: CoberturaZona | null;
+  zonaCobertura!: ReturnType<CoberturaZona['toJSON']> | null;
 
   @Column('varchar', { length: 255, name: 'localidad', nullable: true })
   localidad!: string | null;
