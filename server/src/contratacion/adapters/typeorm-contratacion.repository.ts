@@ -14,4 +14,8 @@ export class TypeOrmContratacionRepository implements IContratacionRepository {
   async save(contratacion: Contratacion): Promise<Contratacion> {
     return this.repo.save(contratacion);
   }
+
+  async findById(id: string): Promise<Contratacion | null> {
+    return this.repo.findOne({ where: { id } });
+  }
 }

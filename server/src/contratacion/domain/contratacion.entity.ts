@@ -29,6 +29,15 @@ export class Contratacion {
   @Column({ type: 'text' })
   descripcion: string;
 
+  @Column({ type: 'date', name: 'fecha_propuesta', nullable: true })
+  fechaPropuesta: string | null;
+
+  @Column({ type: 'varchar', length: 50, name: 'franja_propuesta', nullable: true })
+  franjaPropuesta: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'precio_estimado', nullable: true })
+  precioEstimado: number | null;
+
   @Column({
     type: 'enum',
     enum: ContratacionEstado,

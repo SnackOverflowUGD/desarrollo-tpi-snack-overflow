@@ -16,6 +16,7 @@ import { Contratacion } from '../domain/contratacion.entity.js';
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
 import { ContratacionResponseDto } from '../dto/contratacion-response.dto.js';
+import { SendProposalDto } from '../dto/send-proposal.dto.js';
 import {
   AVAILABILITY_SERVICE,
   type IAvailabilityService,
@@ -185,5 +186,148 @@ export class ContratacionService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC08: Send proposal (prestador → presupuestada)
+  // ---------------------------------------------------------------------------
+  async sendProposal(
+    id: string,
+    dto: SendProposalDto,
+    userId: string,
+    role: string,
+  ): Promise<ContratacionResponseDto> {
+    // 1. Only PRESTADOR can send proposals (RN-CON-01)
+    if (role !== UserRole.PRESTADOR) {
+      throw new ForbiddenException('Only prestadores can send proposals.');
+    }
+
+    // 2. Find contratación
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (!contratacion) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 3. Only the assigned prestador can act — hide existence via 404
+    if (contratacion.prestadorId !== userId) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 4. Must be in SOLICITADA state
+    if (contratacion.estado !== ContratacionEstado.SOLICITADA) {
+      throw new ConflictException(
+        'Contratación is not in a state that accepts proposals.',
+      );
+    }
+
+    // 5. Validate fecha is today or future
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const fechaDate = new Date(dto.fecha);
+    if (fechaDate < today) {
+      throw new UnprocessableEntityException(
+        'The proposal date must be today or a future date.',
+      );
+    }
+
+    // 5b. Validate precioEstimado > 0
+    if (dto.precioEstimado <= 0) {
+      throw new UnprocessableEntityException(
+        'The estimated price must be greater than zero.',
+      );
+    }
+
+    // 6. Update entity with proposal data
+    contratacion.fechaPropuesta = dto.fecha;
+    contratacion.franjaPropuesta = dto.franja;
+    contratacion.precioEstimado = dto.precioEstimado;
+    contratacion.estado = ContratacionEstado.PRESUPUESTADA;
+
+    // 7. Save (simple save, no QueryRunner)
+    const saved = await this.contratacionRepo.save(contratacion);
+
+    // 8. Invoke UC09 state machine transition → PRESUPUESTADA
+    await this.stateMachine.transitionTo(
+      saved.id,
+      ContratacionEstado.PRESUPUESTADA,
+    );
+
+    this.logger.log(`PROPOSAL_SENT id=${saved.id}`);
+
+    // 9. Return response
+    return new ContratacionResponseDto({
+      id: saved.id,
+      ubicacion: saved.ubicacion,
+      prestadorId: saved.prestadorId,
+      clienteId: saved.clienteId,
+      fecha: saved.fecha,
+      franja: saved.franja,
+      descripcion: saved.descripcion,
+      fechaPropuesta: saved.fechaPropuesta,
+      franjaPropuesta: saved.franjaPropuesta,
+      precioEstimado: saved.precioEstimado,
+      estado: saved.estado,
+      createdAt: saved.createdAt,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC08: Reject request (prestador → cancelada)
+  // ---------------------------------------------------------------------------
+  async reject(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<ContratacionResponseDto> {
+    // 1. Only PRESTADOR can reject requests (RN-CON-01)
+    if (role !== UserRole.PRESTADOR) {
+      throw new ForbiddenException('Only prestadores can reject requests.');
+    }
+
+    // 2. Find contratación
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (!contratacion) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 3. Only the assigned prestador can act — hide existence via 404
+    if (contratacion.prestadorId !== userId) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 4. Must be in SOLICITADA state
+    if (contratacion.estado !== ContratacionEstado.SOLICITADA) {
+      throw new ConflictException(
+        'Contratación is not in a state that can be rejected.',
+      );
+    }
+
+    // 5. Update estado and save
+    contratacion.estado = ContratacionEstado.CANCELADA;
+    const saved = await this.contratacionRepo.save(contratacion);
+
+    // 6. Invoke UC09 state machine transition → CANCELADA
+    await this.stateMachine.transitionTo(
+      saved.id,
+      ContratacionEstado.CANCELADA,
+    );
+
+    this.logger.log(`REQUEST_REJECTED id=${saved.id}`);
+
+    // 7. Return response
+    return new ContratacionResponseDto({
+      id: saved.id,
+      ubicacion: saved.ubicacion,
+      prestadorId: saved.prestadorId,
+      clienteId: saved.clienteId,
+      fecha: saved.fecha,
+      franja: saved.franja,
+      descripcion: saved.descripcion,
+      fechaPropuesta: saved.fechaPropuesta,
+      franjaPropuesta: saved.franjaPropuesta,
+      precioEstimado: saved.precioEstimado,
+      estado: saved.estado,
+      createdAt: saved.createdAt,
+    });
   }
 }
