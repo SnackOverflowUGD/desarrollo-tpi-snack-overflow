@@ -1,0 +1,106 @@
+# UC04 — Buscar prestadores (Spec)
+
+## Propósito
+
+Permite que un cliente (sin necesidad de autenticación — acceso público) busque y compare prestadores de oficios por tipo de servicio, zona de cobertura, cualificación y disponibilidad, y consulte su perfil público. UC04 es el punto de entrada al catálogo y no requiere sesión iniciada; junto con UC01 (Registrarse) son los únicos casos de uso de acceso público.
+
+El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenamiento de resultados (por calificación, distancia y disponibilidad), y accede al catálogo de servicios (RF-2.1) filtrado por zona de cobertura (RF-2.2).
+
+## Requisitos
+
+### Trazabilidad funcional
+
+| Código | Prioridad | Descripción normativa |
+|--------|-----------|----------------------|
+| RF-2.1 | Obligatorio | El catálogo *deberá* cubrir las 7 categorías de servicios del Anexo A. |
+| RF-2.2 | Obligatorio | La búsqueda *deberá* filtrar prestadores cuya zona de cobertura contiene la ubicación del cliente. |
+| RF-2.3 | Obligatorio | Los resultados *deberán* admitir ordenamiento por calificación, distancia y disponibilidad. |
+| RF-2.5 | Obligatorio | El perfil público *deberá* mostrar servicios, calificación promedio y reseñas recibidas. |
+
+### Trazabilidad no funcional
+
+| Código | Descripción normativa | Impacto en UC04 |
+|--------|----------------------|-----------------|
+| RNF-S.1 | El sistema *deberá* proteger los datos sensibles aplicando el principio de mínimo privilegio. | Los resultados de búsqueda solo exponen datos públicos del perfil del prestador (nombre, oficio, calificación, zona de cobertura). No se revelan datos de contacto sin una contratación en curso. |
+| RNF-S.4 | El sistema *deberá* tratar los datos personales y financieros conforme a la Ley 25.326 de Protección de Datos Personales. | La ubicación ingresada por el cliente para la búsqueda no se persiste ni se asocia a su identidad. No se almacenan históricos de búsqueda. |
+| RNF-O.1 | El sistema *deberá* completar la búsqueda y presentación de resultados en menos de 2 segundos (p95) ante 100 búsquedas concurrentes. | E1 del ATAM — búsqueda concurrente ≤2 s p95, ≤70% CPU. El módulo de búsqueda debe estar optimizado para consultas geográficas y de disponibilidad. |
+| RNF-O.2 | La cobertura de tests del módulo de núcleo *deberá* ser ≥90%. | El módulo `catalogo` y sus componentes de búsqueda y ranking deben alcanzar ≥90% de cobertura de líneas. |
+
+### Reglas de negocio
+
+| ID | Regla |
+|----|-------|
+| RN-CAT-01 | Solo se muestran prestadores con cuenta **activa** y al menos un servicio **publicado** en el catálogo. Prestadores suspendidos (RF-1.5) o sin servicios no aparecen en resultados. |
+| RN-CAT-02 | La coincidencia de zona de cobertura se determina por la relación entre la **ubicación del cliente** (coordenadas o localidad) y la **zona de cobertura configurada** por el prestador (UC06). Si el prestador no definió zona, se asume solo su localidad registrada. |
+| RN-CAT-03 | El ordenamiento por defecto de los resultados es **por calificación descendente** (más alto primero). A igual calificación, se ordena por **cantidad de reseñas** descendente. |
+| RN-CAT-04 | La **disponibilidad** reflejada en los resultados considera las franjas horarias configuradas por el prestador (UC06) **vigentes a la fecha de la consulta**, excluyendo períodos no disponibles y franjas ya reservadas con contrataciones en estado distinto de *finalizada* o *cancelada*. |
+| RN-CAT-05 | El perfil público del prestador muestra: nombre, oficio(s), calificación promedio, cantidad de reseñas, zona de cobertura, y lista de servicios publicados con descripción y rango de precios. No se muestra dirección particular, teléfono ni e-mail hasta que exista una contratación aceptada (UC21) entre el cliente y el prestador. |
+
+## Escenarios (Given-When-Then)
+
+### ESC-01: Búsqueda básica con resultados — flujo feliz
+
+- **Dado** que existen prestadores activos con servicios publicados cuyas zonas de cobertura contienen la ubicación ingresada
+- **Cuando** el cliente ingresa un oficio y una ubicación, y confirma la búsqueda
+- **Entonces** el sistema retorna un listado de prestadores que coinciden con el oficio y cubren la ubicación, ordenados por calificación descendente por defecto, mostrando nombre, calificación promedio y disponibilidad resumida
+
+### ESC-02: Ordenamiento por calificación
+
+- **Dado** que el sistema mostró resultados de búsqueda
+- **Cuando** el cliente selecciona ordenar por "calificación"
+- **Entonces** el sistema reordena los resultados de mayor a menor calificación promedio, y a igual calificación por cantidad de reseñas descendente
+
+### ESC-03: Ordenamiento por distancia
+
+- **Dado** que el sistema mostró resultados de búsqueda
+- **Cuando** el cliente selecciona ordenar por "distancia"
+- **Entonces** el sistema reordena los resultados del prestador más cercano al más lejano respecto a la ubicación ingresada
+
+### ESC-04: Ordenamiento por disponibilidad
+
+- **Dado** que el sistema mostró resultados de búsqueda
+- **Cuando** el cliente selecciona ordenar por "disponibilidad"
+- **Entonces** el sistema reordena los resultados mostrando primero los prestadores con mayor cantidad de franjas horarias disponibles en los próximos 7 días
+
+### ESC-05: Búsqueda sin resultados
+
+- **Dado** que no existen prestadores cuya zona de cobertura contenga la ubicación ingresada para el oficio solicitado
+- **Cuando** el cliente confirma la búsqueda
+- **Entonces** el sistema informa que no se encontraron prestadores y sugiere ampliar los criterios (cambiar oficio, ubicación o eliminar filtros). El caso de uso se reanuda en el paso de ingreso de criterios.
+
+### ESC-06: Consulta de perfil público
+
+- **Dado** que el cliente visualiza los resultados de búsqueda
+- **Cuando** selecciona un prestador de la lista
+- **Entonces** el sistema muestra el perfil público del prestador con: nombre, oficio(s), calificación promedio, reseñas recibidas, zona de cobertura, y lista de servicios publicados con descripción y rango de precios estimado
+
+### ESC-07: Criterios de búsqueda vacíos o inválidos
+
+- **Dado** que el cliente no ingresó un oficio o no ingresó una ubicación
+- **Cuando** intenta confirmar la búsqueda
+- **Entonces** el sistema muestra un mensaje indicando que el oficio y la ubicación son obligatorios y no ejecuta la búsqueda
+
+### ESC-08: Búsqueda con múltiples filtros combinados
+
+- **Dado** que existen prestadores activos en múltiples categorías y zonas
+- **Cuando** el cliente ingresa oficio, ubicación y aplica filtros adicionales (rango de calificación mínima, disponibilidad en fecha específica) y selecciona ordenamiento por distancia
+- **Entonces** el sistema aplica todos los filtros concurrentemente, ordena por distancia, y retorna solo los prestadores que cumplen todas las condiciones
+
+## Fuera de alcance
+
+- **Publicación de servicios en el catálogo** — cubierto por UC05 (Publicar servicios).
+- **Gestión de agenda y disponibilidad** — cubierto por UC06 (Gestionar agenda y disponibilidad).
+- **Solicitud de contratación** — cubierto por UC07 (Solicitar contratación).
+- **Verificación de habilitaciones profesionales** — cubierto por UC18 (Verificar habilitaciones).
+- **Geolocalización en tiempo real** — no hay requisito de tracking GPS en vivo; la ubicación del cliente se ingresa manualmente (localidad o coordenadas).
+- **Reserva directa desde búsqueda** — UC04 es solo consulta; la reserva se inicia en UC07.
+
+## Preguntas abiertas / supuestos
+
+| ID | Estado | Resolución |
+|----|--------|-----------|
+| PA-01 | Supuesto | La ubicación del cliente se ingresa como texto de localidad + geocodificación aproximada, no como coordenadas GPS en tiempo real. Se asume que el servicio de geocodificación va detrás de un adaptador (ADR-002). |
+| PA-02 | Supuesto | La "disponibilidad" en resultados de búsqueda muestra un indicador resumido (ej. "Disponible esta semana", "Próxima disponibilidad: 15/06"), no las franjas exactas. El detalle de franjas se ve al solicitar contratación (UC07). |
+| PA-03 | Supuesto | Si el prestador no configuró zona de cobertura explícita (UC06), se asume su localidad de registro como zona de cobertura por defecto. |
+| PA-04 | Pendiente | ¿El ordenamiento por defecto debe ser configurable por el cliente (guardar preferencia) o siempre calificación descendente? Se propone calificación descendente como default. |
+| PA-05 | Pendiente | ¿Se requiere paginación de resultados? Se asume que sí, con un límite de 20 resultados por página, pero debe confirmarse en diseño. |
