@@ -114,12 +114,15 @@ sprint quedan pendientes** — el `client/` sigue siendo el scaffold de Next.js.
 | **MI-09.2** | Endpoints de transición de estado | Backend | Pirovani | MI-09.1, MI-07.1 | ✅ |
 | **MI-09.3** | UI gestión y seguimiento | Frontend | Pirovani | 09.2, 08.2, 02.2 | ✅ |
 | **MI-09.4** | Integración del WI al producto de sprint | Integración | Pirovani | 09.1–09.3 | 🟡 |
-| **MI-10** | Integración del sprint al producto continuo | Integración | Todos | UC01,02,04,07,08,09 | 🟡 |
-| **MI-11** | Verificación de la integración | Testing | Lezcano, Dos Santos | MI-10 | 🟡 |
+| **MI-10** | Integración del sprint al producto continuo | Integración | Todos | UC01,02,04,07,08,09 | ✅ |
+| **MI-11** | Verificación de la integración | Testing | Lezcano, Dos Santos | MI-10 | ✅ |
 
-> **MI-10/MI-11:** la integración continua a `main` y su verificación están hechas **a nivel
-> backend** (CI: unit + build + e2e reales). La verificación de **sistema/E2E (Playwright)** y la
-> integración full-stack quedan pendientes hasta que existan las UIs.
+> **MI-10/MI-11:** integración continua a `main` completa (CI: unit + build + e2e reales por PR).
+> Verificación de **sistema/E2E (Playwright)** cerrada: `client/e2e/sistema.spec.ts` corre el flujo
+> integrado end-to-end (registro→login→búsqueda→perfil→solicitar→presupuestar→confirmar→iniciar→
+> finalizar) contra el stack vivo + seed real (`server/scripts/seed-e2e.sh`), 7/7 verde. Detectó y
+> cerró un bug de integración bloqueante (BFF auth en transiciones, ver `uc09`/commit fix). Pendiente
+> menor: matriz cross-browser (WebKit/Mobile Safari requieren `sudo playwright install-deps`).
 
 ## Roles por fase (asignación inicial)
 
@@ -149,10 +152,12 @@ Por cada Work Item (un Caso de Uso), el Coordinador de IA dispara el pipeline un
 
 ## Próximo paso
 
-Sprint 1 con el **backend integrado** a `main`. Cola de trabajo inmediata:
+Sprint 1 **completo e integrado** a `main`: backend (UC01/02/04/07/08/09) + todas las UIs
+(MI-01.3/02.2/04.3/07.2/08.2/09.3) + verificación de sistema (MI-11). Cola de trabajo:
 
-1. **UIs de Sprint 1** (frontend pendiente): MI-01.3, MI-02.2, MI-04.3, MI-07.2/08.2 (parte UI), MI-09.3.
-2. **Verificación de sistema** (MI-11): tests E2E Playwright sobre los flujos integrados (cuando haya UI).
-3. **Limpieza post-integración** (Wave 5 — `openspec/integration-plan-iter1.md`): sweep `prettier`
-   + pasar el lint del server a bloqueante en CI.
+1. ✅ **UIs de Sprint 1**: MI-01.3, MI-02.2, MI-04.3, MI-07.2, MI-08.2, MI-09.3 — todas mergeadas.
+2. ✅ **Verificación de sistema** (MI-11): `client/e2e/sistema.spec.ts` flujo integrado 7/7 verde.
+3. **Follow-ups menores (no bloqueantes):** matriz cross-browser E2E (`sudo playwright install-deps`);
+   timeline de historial de estados (endpoint `GET /contrataciones/:id` con `state_change_history`);
+   enriquecer `ContratacionListItemDto` con `prestadorNombre` (hoy la card del cliente muestra el UUID).
 4. **Iteración 2:** UC03, UC17, UC05, UC06, UC12, UC13 (vía Pipeline SDD).
