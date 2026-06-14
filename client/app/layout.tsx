@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Fraunces, Figtree, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SessionProvider } from "@/lib/session/session-context";
+import { getInitialSession } from "@/lib/session/cookie";
 import { copy } from "@/lib/copy/es-AR";
 import "./globals.css";
 
@@ -38,11 +40,14 @@ export const metadata: Metadata = {
   description: copy.app.description,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Hydrate the client session from the cookie server-side (no flash).
+  const initialSession = await getInitialSession();
+
   return (
     <html
       lang="es-AR"
@@ -56,10 +61,12 @@ export default function RootLayout({
           {copy.a11y.skipToContent}
         </a>
         <ThemeProvider>
-          <main id="main" className="flex flex-1 flex-col">
-            {children}
-          </main>
-          <Toaster />
+          <SessionProvider initial={initialSession}>
+            <main id="main" className="flex flex-1 flex-col">
+              {children}
+            </main>
+            <Toaster />
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

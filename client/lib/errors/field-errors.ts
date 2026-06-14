@@ -7,6 +7,7 @@ import { copy } from "@/lib/copy/es-AR";
 import type {
   BackendValidationError,
   RegisterResult,
+  LoginResult,
 } from "@/lib/api/auth";
 
 export type FieldKey =
@@ -112,4 +113,59 @@ export function mapGlobalError(
     default:
       return null;
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UC02 — login + reset error mapping (design §4).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Map a login error to a banner message (role="alert"). Returns null for
+ * 'validation' (handled inline via mapValidationErrors).
+ *
+ * Postconditions (OCL §9 / design §4):
+ *  - 'invalid_credentials' → a GENERIC message that NEVER names which field
+ *    failed (anti-enumeration, RNF-S.4, Q1/Q7).
+ *  - 'suspended' → message includes the support contact channel.
+ *  - 'locked' → message indicates the ~30 min wait.
+ *  - 'network'/'server' → non-technical message, no stack traces.
+ *  - 'validation' → null (inline).
+ */
+export function mapLoginError(
+  result: Extract<LoginResult, { ok: false }>,
+): string | null {
+  switch (result.kind) {
+    case "invalid_credentials":
+      return copy.login.errors.invalidCredentials;
+    case "suspended":
+      return copy.login.errors.suspended;
+    case "locked":
+      return copy.login.errors.locked;
+    case "network":
+      return copy.globalErrors.network;
+    case "server":
+      return copy.globalErrors.server;
+    case "validation":
+      return null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Map a 422 reset body to inline/global messages. The only field-mappable
+ * server rule is a short password → newPassword; anything else is a generic
+ * global banner. (Confirm-mismatch is 100% client-side via zod.)
+ */
+export function mapResetValidation(
+  body: BackendValidationError,
+): { newPassword?: string; global?: string } {
+  for (const msg of body.message ?? []) {
+    if (typeof msg !== "string") continue;
+    const firstToken = msg.trim().split(/[\s:]+/, 1)[0]?.toLowerCase() ?? "";
+    if (firstToken === "newpassword" || firstToken === "password") {
+      return { newPassword: copy.reset.passwordShort };
+    }
+  }
+  return { global: copy.globalErrors.generic };
 }

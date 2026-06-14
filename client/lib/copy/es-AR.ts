@@ -64,6 +64,83 @@ export const copy = {
     pendingTitle: "Cuenta creada — pendiente de habilitación",
   },
 
+  login: {
+    title: "Ingresá a tu cuenta",
+    subtitlePrompt: "¿Todavía no tenés cuenta?",
+    subtitleLink: "Creá una",
+
+    emailLabel: "E-mail",
+    emailHelp: "Ej. nombre@dominio.com",
+    passwordLabel: "Contraseña",
+    passwordShow: "Mostrar contraseña",
+    passwordHide: "Ocultar contraseña",
+
+    forgotLink: "¿Olvidaste tu contraseña?",
+
+    submit: "Ingresar",
+    submitting: "Ingresando…",
+
+    // Banner messages (role="alert"). Catálogo es-AR del spec §"Catálogo de mensajes".
+    errors: {
+      // 401 — GENÉRICO, anti-enumeración (RNF-S.4): nunca revela qué campo falló.
+      invalidCredentials: "E-mail o contraseña incorrectos.",
+      // 403 — incluye canal de contacto a soporte.
+      suspended:
+        "Tu cuenta está suspendida. Escribinos a soporte@snackoverflow.com.",
+      // 423 — bloqueo temporal; el submit queda deshabilitado.
+      locked:
+        "Cuenta bloqueada temporalmente por demasiados intentos. Probá de nuevo en unos 30 minutos.",
+    },
+  },
+
+  forgot: {
+    title: "Recuperá tu contraseña",
+    subtitle:
+      "Ingresá tu e-mail y, si está registrado, te enviamos un enlace para restablecerla.",
+    backToLoginPrompt: "¿Te acordaste?",
+    backToLoginLink: "Volvé a ingresar",
+
+    emailLabel: "E-mail",
+    emailHelp: "Ej. nombre@dominio.com",
+
+    submit: "Enviar enlace",
+    submitting: "Enviando…",
+
+    // Mensaje neutro (role="status") — NO confirma ni niega la existencia de la cuenta.
+    neutralMessage:
+      "Si ese e-mail está registrado, te enviamos un enlace para restablecer tu contraseña.",
+  },
+
+  reset: {
+    title: "Elegí una nueva contraseña",
+    subtitle: "Tu nueva contraseña debe tener al menos 8 caracteres.",
+
+    newPasswordLabel: "Nueva contraseña",
+    confirmPasswordLabel: "Repetí la contraseña",
+    passwordShow: "Mostrar contraseña",
+    passwordHide: "Ocultar contraseña",
+
+    submit: "Guardar contraseña",
+    submitting: "Guardando…",
+
+    // Éxito (role="status") antes de redirigir a /login.
+    success: "Tu contraseña fue actualizada. Ya podés ingresar.",
+
+    // Validación cliente (zod).
+    passwordShort: "La contraseña debe tener al menos 8 caracteres.",
+    mismatch: "Las contraseñas no coinciden.",
+
+    // Pantalla "Enlace expirado" (token vencido/usado o ausente).
+    expiredTitle: "Enlace expirado",
+    expiredBody: "El enlace expiró o ya fue usado. Pedí uno nuevo.",
+    expiredCta: "Pedir un nuevo enlace",
+  },
+
+  session: {
+    logout: "Cerrar sesión",
+    loggingOut: "Cerrando sesión…",
+  },
+
   // Field-level error messages (es-AR), keyed by backend field name.
   // Never surface the raw English class-validator string (REQ-07.3).
   fieldErrors: {
@@ -74,6 +151,8 @@ export const copy = {
     password: "La contraseña debe tener entre 8 y 128 caracteres.",
     role: "Elegí si te registrás como cliente o prestador.",
     trade: "Seleccioná tu oficio.",
+    // Generic required-field message (login: password no aplica longitud mínima).
+    required: "Este campo es obligatorio.",
   },
 
   // Specific inline messages
