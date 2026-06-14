@@ -743,3 +743,325 @@ describe('ContratacionService.list()', () => {
     expect(result.map((r) => r.id)).toEqual(['b', 'a']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// UC09: confirm() — cliente → confirmada (REQ-01, ESC-UI-03)
+// ---------------------------------------------------------------------------
+describe('ContratacionService.confirm()', () => {
+  function setupSaved() {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    contratacionRepo.save.mockImplementation(
+      async (entity: Contratacion): Promise<Contratacion> => ({ ...entity }),
+    );
+    stateMachine.transitionTo.mockResolvedValue(undefined);
+    return { service, contratacionRepo, stateMachine };
+  }
+
+  it('UC09-CF-01: cliente owner + presupuestada → CONFIRMADA + transitionTo', async () => {
+    const { service, contratacionRepo, stateMachine } = setupSaved();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.PRESUPUESTADA }),
+    );
+
+    const result = await service.confirm(
+      'contratacion-uuid-1',
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+    );
+
+    expect(result.estado).toBe(ContratacionEstado.CONFIRMADA);
+    expect(contratacionRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.CONFIRMADA,
+    );
+  });
+
+  it('UC09-CF-02: role PRESTADOR → ForbiddenException 403', async () => {
+    const { service } = makeMocks();
+    await expect(
+      service.confirm(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('UC09-CF-03: not owner (clienteId mismatch) → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({
+        clienteId: 'other-cliente',
+        estado: ContratacionEstado.PRESUPUESTADA,
+      }),
+    );
+    await expect(
+      service.confirm(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        UserRole.CLIENTE,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC09-CF-04: findById null → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(null);
+    await expect(
+      service.confirm('nope', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC09-CF-05: estado not PRESUPUESTADA → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+    await expect(
+      service.confirm(
+        'contratacion-uuid-1',
+        'cliente-uuid-1',
+        UserRole.CLIENTE,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC09: start() — prestador → en_curso (REQ-02, ESC-UI-04)
+// ---------------------------------------------------------------------------
+describe('ContratacionService.start()', () => {
+  function setupSaved() {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    contratacionRepo.save.mockImplementation(
+      async (entity: Contratacion): Promise<Contratacion> => ({ ...entity }),
+    );
+    stateMachine.transitionTo.mockResolvedValue(undefined);
+    return { service, contratacionRepo, stateMachine };
+  }
+
+  it('UC09-ST-01: prestador owner + confirmada → EN_CURSO + transitionTo', async () => {
+    const { service, contratacionRepo, stateMachine } = setupSaved();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+
+    const result = await service.start(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+
+    expect(result.estado).toBe(ContratacionEstado.EN_CURSO);
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.EN_CURSO,
+    );
+  });
+
+  it('UC09-ST-02: role CLIENTE → ForbiddenException 403', async () => {
+    const { service } = makeMocks();
+    await expect(
+      service.start('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('UC09-ST-03: not owner (prestadorId mismatch) → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({
+        prestadorId: 'other-prestador',
+        estado: ContratacionEstado.CONFIRMADA,
+      }),
+    );
+    await expect(
+      service.start(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC09-ST-04: estado not CONFIRMADA → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.SOLICITADA }),
+    );
+    await expect(
+      service.start(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC09: finish() — prestador → finalizada (REQ-03, ESC-UI-05)
+// ---------------------------------------------------------------------------
+describe('ContratacionService.finish()', () => {
+  function setupSaved() {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    contratacionRepo.save.mockImplementation(
+      async (entity: Contratacion): Promise<Contratacion> => ({ ...entity }),
+    );
+    stateMachine.transitionTo.mockResolvedValue(undefined);
+    return { service, contratacionRepo, stateMachine };
+  }
+
+  it('UC09-FI-01: prestador owner + en_curso → FINALIZADA + transitionTo', async () => {
+    const { service, contratacionRepo, stateMachine } = setupSaved();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.EN_CURSO }),
+    );
+
+    const result = await service.finish(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+
+    expect(result.estado).toBe(ContratacionEstado.FINALIZADA);
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.FINALIZADA,
+    );
+  });
+
+  it('UC09-FI-02: role CLIENTE → ForbiddenException 403', async () => {
+    const { service } = makeMocks();
+    await expect(
+      service.finish('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('UC09-FI-03: not owner (prestadorId mismatch) → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({
+        prestadorId: 'other-prestador',
+        estado: ContratacionEstado.EN_CURSO,
+      }),
+    );
+    await expect(
+      service.finish(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC09-FI-04: estado not EN_CURSO → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+    await expect(
+      service.finish(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC09: cancel() — cliente OR prestador participant → cancelada (REQ-04)
+// ---------------------------------------------------------------------------
+describe('ContratacionService.cancel()', () => {
+  function setupSaved() {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    contratacionRepo.save.mockImplementation(
+      async (entity: Contratacion): Promise<Contratacion> => ({ ...entity }),
+    );
+    stateMachine.transitionTo.mockResolvedValue(undefined);
+    return { service, contratacionRepo, stateMachine };
+  }
+
+  it('UC09-CA-01: cliente participant from active → CANCELADA + transitionTo', async () => {
+    const { service, contratacionRepo, stateMachine } = setupSaved();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.PRESUPUESTADA }),
+    );
+
+    const result = await service.cancel(
+      'contratacion-uuid-1',
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+    );
+
+    expect(result.estado).toBe(ContratacionEstado.CANCELADA);
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.CANCELADA,
+    );
+  });
+
+  it('UC09-CA-02: prestador participant from active → CANCELADA', async () => {
+    const { service, contratacionRepo, stateMachine } = setupSaved();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+
+    const result = await service.cancel(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+
+    expect(result.estado).toBe(ContratacionEstado.CANCELADA);
+    expect(stateMachine.transitionTo).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      ContratacionEstado.CANCELADA,
+    );
+  });
+
+  it('UC09-CA-03: third party (neither cliente nor prestador) → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+    await expect(
+      service.cancel('contratacion-uuid-1', 'stranger-uuid', UserRole.CLIENTE),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC09-CA-04: findById null → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(null);
+    await expect(
+      service.cancel('nope', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('UC09-CA-05: terminal estado FINALIZADA → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.FINALIZADA }),
+    );
+    await expect(
+      service.cancel('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('UC09-CA-06: terminal estado CANCELADA → ConflictException 409', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CANCELADA }),
+    );
+    await expect(
+      service.cancel(
+        'contratacion-uuid-1',
+        'prestador-uuid-1',
+        UserRole.PRESTADOR,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+});

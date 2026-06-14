@@ -105,14 +105,14 @@ sprint quedan pendientes** — el `client/` sigue siendo el scaffold de Next.js.
 | **MI-04.3** | UI listado y perfil de prestador | Frontend | Nieto | MI-02.2, MI-04.2 | ✅ |
 | **MI-04.4** | Integración del WI al producto de sprint | Integración | Nieto | 04.1–04.3 | 🟡 |
 | **MI-07.1** | Modelo y lógica de solicitud | Backend | Pirovani | MI-01.1, MI-04.1 | ✅ |
-| **MI-07.2** | Endpoint crear solicitud + UI | Full-stack | Pirovani | MI-02.2, 07.1, 09.1 | 🟡 |
+| **MI-07.2** | Endpoint crear solicitud + UI | Full-stack | Pirovani | MI-02.2, 07.1, 09.1 | ✅ |
 | **MI-07.3** | Integración del WI al producto de sprint | Integración | Pirovani | 07.1–07.2 | 🟡 |
 | **MI-08.1** | Lógica de propuesta y rechazo | Backend | Pirovani | MI-07.1, MI-09.1 | ✅ |
-| **MI-08.2** | Endpoints + UI de respuesta del prestador | Full-stack | Pirovani | 08.1, 09.2, 07.2 | 🟡 |
+| **MI-08.2** | Endpoints + UI de respuesta del prestador | Full-stack | Pirovani | 08.1, 09.2, 07.2 | ✅ |
 | **MI-08.3** | Integración del WI al producto de sprint | Integración | Pirovani | 08.1–08.2 | 🟡 |
 | **MI-09.1** | Máquina de estados de contratación | Backend | Pirovani | — | ✅ |
 | **MI-09.2** | Endpoints de transición de estado | Backend | Pirovani | MI-09.1, MI-07.1 | ✅ |
-| **MI-09.3** | UI gestión y seguimiento | Frontend | Pirovani | 09.2, 08.2, 02.2 | ⏳ |
+| **MI-09.3** | UI gestión y seguimiento | Frontend | Pirovani | 09.2, 08.2, 02.2 | ✅ |
 | **MI-09.4** | Integración del WI al producto de sprint | Integración | Pirovani | 09.1–09.3 | 🟡 |
 | **MI-10** | Integración del sprint al producto continuo | Integración | Todos | UC01,02,04,07,08,09 | 🟡 |
 | **MI-11** | Verificación de la integración | Testing | Lezcano, Dos Santos | MI-10 | 🟡 |

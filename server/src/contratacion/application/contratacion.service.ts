@@ -408,4 +408,195 @@ export class ContratacionService {
       createdAt: saved.createdAt,
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // UC09: Confirm proposal (cliente → confirmada)  REQ-01, ESC-UI-03
+  // ---------------------------------------------------------------------------
+  /**
+   * Mirrors `reject`: rol → ownership (404, hides existence) → current-state
+   * guard (409 ConflictException, NOT a bubbled InvalidTransitionError which is
+   * a plain Error → would map to 500, ADR-09-02) → set estado → save →
+   * stateMachine.transitionTo (2nd barrier, defense in depth).
+   */
+  async confirm(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<ContratacionResponseDto> {
+    // 1. Only CLIENTE can confirm (RN-CON-01)
+    if ((role as UserRole) !== UserRole.CLIENTE) {
+      throw new ForbiddenException('Only clients can confirm proposals.');
+    }
+
+    // 2. Find + ownership (hide existence via 404, RN-CON-07)
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (!contratacion || contratacion.clienteId !== userId) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 3. Current-state guard (409 ConflictException, NOT bubbled SM error)
+    if (contratacion.estado !== ContratacionEstado.PRESUPUESTADA) {
+      throw new ConflictException(
+        'Contratación is not in a state that can be confirmed.',
+      );
+    }
+
+    // 4. Set estado + save
+    contratacion.estado = ContratacionEstado.CONFIRMADA;
+    const saved = await this.contratacionRepo.save(contratacion);
+
+    // 5. State machine transition (2nd barrier, defense in depth)
+    await this.stateMachine.transitionTo(
+      saved.id,
+      ContratacionEstado.CONFIRMADA,
+    );
+
+    this.logger.log(`CONTRATACION_CONFIRMED id=${saved.id}`);
+
+    return this.toResponseDto(saved);
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC09: Start work (prestador → en_curso)  REQ-02, ESC-UI-04
+  // ---------------------------------------------------------------------------
+  async start(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<ContratacionResponseDto> {
+    // 1. Only PRESTADOR can start work
+    if ((role as UserRole) !== UserRole.PRESTADOR) {
+      throw new ForbiddenException('Only prestadores can start work.');
+    }
+
+    // 2. Find + ownership (404, hide existence)
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (!contratacion || contratacion.prestadorId !== userId) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 3. Current-state guard (409)
+    if (contratacion.estado !== ContratacionEstado.CONFIRMADA) {
+      throw new ConflictException(
+        'Contratación is not in a state that can be started.',
+      );
+    }
+
+    // 4. Set estado + save
+    contratacion.estado = ContratacionEstado.EN_CURSO;
+    const saved = await this.contratacionRepo.save(contratacion);
+
+    // 5. State machine transition (2nd barrier)
+    await this.stateMachine.transitionTo(saved.id, ContratacionEstado.EN_CURSO);
+
+    this.logger.log(`CONTRATACION_STARTED id=${saved.id}`);
+
+    return this.toResponseDto(saved);
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC09: Finish service (prestador → finalizada, terminal)  REQ-03, ESC-UI-05
+  // ---------------------------------------------------------------------------
+  async finish(
+    id: string,
+    userId: string,
+    role: string,
+  ): Promise<ContratacionResponseDto> {
+    // 1. Only PRESTADOR can finish work
+    if ((role as UserRole) !== UserRole.PRESTADOR) {
+      throw new ForbiddenException('Only prestadores can finish work.');
+    }
+
+    // 2. Find + ownership (404, hide existence)
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (!contratacion || contratacion.prestadorId !== userId) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 3. Current-state guard (409)
+    if (contratacion.estado !== ContratacionEstado.EN_CURSO) {
+      throw new ConflictException(
+        'Contratación is not in a state that can be finished.',
+      );
+    }
+
+    // 4. Set estado + save
+    contratacion.estado = ContratacionEstado.FINALIZADA;
+    const saved = await this.contratacionRepo.save(contratacion);
+
+    // 5. State machine transition (2nd barrier)
+    await this.stateMachine.transitionTo(
+      saved.id,
+      ContratacionEstado.FINALIZADA,
+    );
+
+    this.logger.log(`CONTRATACION_FINISHED id=${saved.id}`);
+
+    return this.toResponseDto(saved);
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC09: Cancel (cliente OR prestador participant → cancelada, terminal)
+  // REQ-04, ESC-UI-06. Reused by UC21 "rechazar propuesta" (presupuestada →
+  // cancelada). Participant guard: either id matches → 404 otherwise (NOT 403).
+  // ---------------------------------------------------------------------------
+  async cancel(
+    id: string,
+    userId: string,
+    _role: string,
+  ): Promise<ContratacionResponseDto> {
+    // 1. Find + participant guard (cliente OR prestador). Any other → 404.
+    //    No role gate: both participants may cancel (RN-CON-07).
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (
+      !contratacion ||
+      (contratacion.clienteId !== userId && contratacion.prestadorId !== userId)
+    ) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    // 2. Terminal-state guard (409): already finalizada/cancelada cannot cancel.
+    if (
+      contratacion.estado === ContratacionEstado.FINALIZADA ||
+      contratacion.estado === ContratacionEstado.CANCELADA
+    ) {
+      throw new ConflictException(
+        'Contratación is already in a terminal state and cannot be cancelled.',
+      );
+    }
+
+    // 3. Set estado + save (any active state → cancelada)
+    contratacion.estado = ContratacionEstado.CANCELADA;
+    const saved = await this.contratacionRepo.save(contratacion);
+
+    // 4. State machine transition (2nd barrier)
+    await this.stateMachine.transitionTo(
+      saved.id,
+      ContratacionEstado.CANCELADA,
+    );
+
+    this.logger.log(`CONTRATACION_CANCELLED id=${saved.id}`);
+
+    return this.toResponseDto(saved);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared response mapper for the UC09 transitions.
+  // ---------------------------------------------------------------------------
+  private toResponseDto(saved: Contratacion): ContratacionResponseDto {
+    return new ContratacionResponseDto({
+      id: saved.id,
+      ubicacion: saved.ubicacion,
+      prestadorId: saved.prestadorId,
+      clienteId: saved.clienteId,
+      fecha: saved.fecha,
+      franja: saved.franja,
+      descripcion: saved.descripcion,
+      fechaPropuesta: saved.fechaPropuesta,
+      franjaPropuesta: saved.franjaPropuesta,
+      precioEstimado: saved.precioEstimado,
+      estado: saved.estado,
+      createdAt: saved.createdAt,
+    });
+  }
 }

@@ -297,3 +297,45 @@ export async function rechazarSolicitud(
 
   return mapResponder(response, await safeJson(response));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UC09 — state transitions (ADR-09-01, REQ-01..04/07..13). Each function POSTs
+// to a same-origin BFF Route Handler with the `id` in the URL and NO body — the
+// backend derives the participant from the token (REQ-10). All reuse
+// `mapResponder` and NEVER throw for business 4xx (OCL §Testing).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Shared no-body POST → mapResponder for the 4 UC09 transitions. */
+async function postTransicion(
+  id: string,
+  verbo: "confirm" | "start" | "finish" | "cancel",
+): Promise<ResponderResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${ENDPOINT}/${id}/${verbo}`, { method: "POST" });
+  } catch {
+    return { ok: false, kind: "network" };
+  }
+
+  return mapResponder(response, await safeJson(response));
+}
+
+/** Confirm a proposal (cliente, presupuestada → confirmada). REQ-01. */
+export async function confirmar(id: string): Promise<ResponderResult> {
+  return postTransicion(id, "confirm");
+}
+
+/** Start work (prestador, confirmada → en_curso). REQ-02. */
+export async function iniciar(id: string): Promise<ResponderResult> {
+  return postTransicion(id, "start");
+}
+
+/** Finish service (prestador, en_curso → finalizada). REQ-03. */
+export async function finalizar(id: string): Promise<ResponderResult> {
+  return postTransicion(id, "finish");
+}
+
+/** Cancel (cliente or prestador participant, active → cancelada). REQ-04. */
+export async function cancelar(id: string): Promise<ResponderResult> {
+  return postTransicion(id, "cancel");
+}

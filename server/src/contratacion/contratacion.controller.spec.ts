@@ -62,6 +62,71 @@ describe('ContratacionController.list()', () => {
   });
 });
 
+describe('ContratacionController UC09 transitions (confirm/start/finish/cancel)', () => {
+  function setup() {
+    const service = {
+      confirm: jest.fn().mockResolvedValue({}),
+      start: jest.fn().mockResolvedValue({}),
+      finish: jest.fn().mockResolvedValue({}),
+      cancel: jest.fn().mockResolvedValue({}),
+    } as unknown as jest.Mocked<ContratacionService>;
+    const controller = new ContratacionController(service);
+    return { service, controller };
+  }
+
+  it('confirm: derives sub/role from req.user (never the body) and delegates', async () => {
+    const { service, controller } = setup();
+    const req = makeReq({ sub: 'cliente-uuid-1', role: UserRole.CLIENTE });
+
+    await controller.confirm('contratacion-uuid-1', req);
+
+    expect(service.confirm).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+    );
+  });
+
+  it('start: derives sub/role from req.user and delegates', async () => {
+    const { service, controller } = setup();
+    const req = makeReq({ sub: 'prestador-uuid-1', role: UserRole.PRESTADOR });
+
+    await controller.start('contratacion-uuid-1', req);
+
+    expect(service.start).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+  });
+
+  it('finish: derives sub/role from req.user and delegates', async () => {
+    const { service, controller } = setup();
+    const req = makeReq({ sub: 'prestador-uuid-1', role: UserRole.PRESTADOR });
+
+    await controller.finish('contratacion-uuid-1', req);
+
+    expect(service.finish).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+  });
+
+  it('cancel: derives sub/role from req.user and delegates', async () => {
+    const { service, controller } = setup();
+    const req = makeReq({ sub: 'cliente-uuid-1', role: UserRole.CLIENTE });
+
+    await controller.cancel('contratacion-uuid-1', req);
+
+    expect(service.cancel).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+    );
+  });
+});
+
 describe('ListContratacionesQueryDto validation (400 on bad ?estado=)', () => {
   it('accepts a valid estado from the enum', async () => {
     const dto = plainToInstance(ListContratacionesQueryDto, {

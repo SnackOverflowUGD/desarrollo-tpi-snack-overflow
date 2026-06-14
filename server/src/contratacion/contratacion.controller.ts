@@ -73,4 +73,46 @@ export class ContratacionController {
     const user = req.user as JwtPayload;
     return this.contratacionService.reject(id, user.sub, user.role);
   }
+
+  // ── UC09 transitions: sub/role derived from req.user, NEVER the body ──
+
+  @Post(':id/confirm')
+  @HttpCode(HttpStatus.OK)
+  async confirm(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ContratacionResponseDto> {
+    const user = req.user as JwtPayload;
+    return this.contratacionService.confirm(id, user.sub, user.role);
+  }
+
+  @Post(':id/start')
+  @HttpCode(HttpStatus.OK)
+  async start(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ContratacionResponseDto> {
+    const user = req.user as JwtPayload;
+    return this.contratacionService.start(id, user.sub, user.role);
+  }
+
+  @Post(':id/finish')
+  @HttpCode(HttpStatus.OK)
+  async finish(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ContratacionResponseDto> {
+    const user = req.user as JwtPayload;
+    return this.contratacionService.finish(id, user.sub, user.role);
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  async cancel(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ContratacionResponseDto> {
+    const user = req.user as JwtPayload;
+    return this.contratacionService.cancel(id, user.sub, user.role);
+  }
 }

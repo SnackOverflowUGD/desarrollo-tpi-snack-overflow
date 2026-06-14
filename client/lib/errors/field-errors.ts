@@ -289,6 +289,55 @@ export function mapResponderError(
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// UC09 — seguimiento (confirm/start/finish/cancel) error mapping (ADR-09-06,
+// REQ-07/12/13). Maps the shared `ResponderResult` kinds to the es-AR catalog
+// under `copy.seguimiento`. NEVER exposes backend traces (REQ-12).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Structured UI mapping for a failed transition. The component interprets it:
+ *  - `redirect: true` (401)            → router.push('/login?next=…'); no message.
+ *  - `refresh: true` (404/409)         → router.refresh() to reflect real state.
+ *  - `banner` set (403/409/404/4xx/red)→ role="alert" message, actionable/retry.
+ */
+export interface MappedSeguimientoError {
+  redirect?: true;
+  refresh?: true;
+  banner?: string;
+}
+
+export function mapSeguimientoError(
+  result: Extract<ResponderResult, { ok: false }>,
+): MappedSeguimientoError {
+  switch (result.kind) {
+    case "unauthorized":
+      // 401 → treat as no session; the component redirects. No visible message.
+      return { redirect: true };
+
+    case "estado_cambiado":
+      // 409 → actionable, refresh to reflect the real state (REQ-12).
+      return { banner: copy.seguimiento.estadoCambiado, refresh: true };
+
+    case "no_disponible":
+      // 404 → inexistent or foreign; refresh + non-error message (REQ-13).
+      return { banner: copy.seguimiento.noDisponible, refresh: true };
+
+    case "forbidden":
+      // 403 → prevented client-side by accionesPara (REQ-07); generic message.
+      return { banner: copy.seguimiento.forbidden };
+
+    case "validacion":
+    case "network":
+    case "server":
+      // Transport / 5xx / unexpected → non-technical banner, retry (REQ-12).
+      return { banner: copy.seguimiento.errorAccionar };
+
+    default:
+      return { banner: copy.seguimiento.errorAccionar };
+  }
+}
+
 /**
  * Map a 422 reset body to inline/global messages. The only field-mappable
  * server rule is a short password → newPassword; anything else is a generic
