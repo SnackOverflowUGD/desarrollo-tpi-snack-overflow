@@ -19,6 +19,8 @@ import { Contratacion } from '../domain/contratacion.entity.js';
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
 import { ContratacionResponseDto } from '../dto/contratacion-response.dto.js';
+import { ContratacionListItemDto } from '../dto/contratacion-list-item.dto.js';
+import { ListContratacionesQueryDto } from '../dto/list-contrataciones-query.dto.js';
 import { SendProposalDto } from '../dto/send-proposal.dto.js';
 import {
   AVAILABILITY_SERVICE,
@@ -26,6 +28,7 @@ import {
 } from '../ports/availability-service.port.js';
 import {
   CONTRATACION_REPOSITORY,
+  type ContratacionFiltro,
   type IContratacionRepository,
 } from '../ports/contratacion-repository.port.js';
 import {
@@ -204,6 +207,63 @@ export class ContratacionService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC08: List contrataciones — role-aware inbox (GET /contrataciones)
+  // ---------------------------------------------------------------------------
+  /**
+   * Role-aware listing (ADR-08-01, REQ-01/02).
+   *
+   * The filtering dimension is derived from the caller's role, NEVER from the
+   * request input (RN-CON-07 isolation):
+   *   PRESTADOR → prestadorId = userId
+   *   CLIENTE   → clienteId = userId   (reused by MI-09.3, only adds its UI)
+   *
+   * Each item is enriched with `clienteNombre` (ADR-08-02) by resolving the
+   * client User via the already-injected USER_REPOSITORY. This is an N+1
+   * resolution accepted for the TPI (documented limit); a null client falls
+   * back to a 'Cliente' placeholder so the list never breaks. Order is
+   * delegated to the repo (createdAt DESC) — the service does NOT reorder.
+   */
+  async list(
+    userId: string,
+    role: string,
+    query: ListContratacionesQueryDto,
+  ): Promise<ContratacionListItemDto[]> {
+    const filtro: ContratacionFiltro = { estado: query.estado };
+    if ((role as UserRole) === UserRole.PRESTADOR) {
+      filtro.prestadorId = userId;
+    } else {
+      filtro.clienteId = userId;
+    }
+
+    const contrataciones =
+      await this.contratacionRepo.findByParticipante(filtro);
+
+    return Promise.all(
+      contrataciones.map(async (c) => {
+        const cliente = await this.userRepo.findById(c.clienteId);
+        const clienteNombre = cliente
+          ? `${cliente.name} ${cliente.lastName}`
+          : 'Cliente';
+        return new ContratacionListItemDto({
+          id: c.id,
+          ubicacion: c.ubicacion,
+          prestadorId: c.prestadorId,
+          clienteId: c.clienteId,
+          clienteNombre,
+          fecha: c.fecha,
+          franja: c.franja,
+          descripcion: c.descripcion,
+          fechaPropuesta: c.fechaPropuesta,
+          franjaPropuesta: c.franjaPropuesta,
+          precioEstimado: c.precioEstimado,
+          estado: c.estado,
+          createdAt: c.createdAt,
+        });
+      }),
+    );
   }
 
   // ---------------------------------------------------------------------------
