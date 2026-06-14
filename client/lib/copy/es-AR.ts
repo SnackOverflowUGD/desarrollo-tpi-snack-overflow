@@ -14,6 +14,28 @@ export const copy = {
     skipToContent: "Saltar al contenido",
   },
 
+  // Global navbar (rendered on every page in the root layout).
+  nav: {
+    // Accessible landmark name for the <nav> + brand home link.
+    landmark: "Navegación principal",
+    brand: "Snack Overflow",
+    brandHome: "Ir al inicio",
+    buscar: "Buscar",
+    // Anonymous right-side actions.
+    ingresar: "Ingresar",
+    crearCuenta: "Crear cuenta",
+    // Authenticated right-side actions, by role.
+    misContrataciones: "Mis contrataciones",
+    solicitudes: "Solicitudes",
+    // Mobile disclosure toggle (aria-label; the button has no visible text).
+    abrirMenu: "Abrir menú",
+    cerrarMenu: "Cerrar menú",
+    // Role chips on the account area (text-visible, not color-only).
+    rolCliente: "Cliente",
+    rolPrestador: "Prestador",
+    salir: "Salir",
+  },
+
   landing: {
     eyebrow: "Snack Overflow",
     title: "Oficios de confianza, cerca tuyo",

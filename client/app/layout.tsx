@@ -3,6 +3,7 @@ import { Fraunces, Figtree, IBM_Plex_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/lib/session/session-context";
+import { Navbar } from "@/components/layout/navbar";
 import { getInitialSession } from "@/lib/session/cookie";
 import { copy } from "@/lib/copy/es-AR";
 import "./globals.css";
@@ -62,6 +63,7 @@ export default async function RootLayout({
         </a>
         <ThemeProvider>
           <SessionProvider initial={initialSession}>
+            <Navbar />
             <main id="main" className="flex flex-1 flex-col">
               {children}
             </main>
