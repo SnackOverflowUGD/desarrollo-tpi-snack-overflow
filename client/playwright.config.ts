@@ -20,11 +20,26 @@ export default defineConfig({
     baseURL: 'http://localhost:3001',
     trace: 'on-first-retry',
   },
-  // RNF-A.2: compatible con Chrome/Firefox/Safari (desktop + móvil). The human
-  // tester runs the full matrix at sprint close; per-commit CI may scope to
-  // chromium for speed. WebKit/Mobile Safari need system libs on Linux:
-  // `sudo npx playwright install-deps` locally, or use the official Playwright
-  // CI image (mcr.microsoft.com/playwright) which bundles them.
+  // RNF-A.2: compatible con Chrome/Firefox/Safari (desktop + móvil). The full
+  // matrix is GREEN (35/35) on Chromium, Firefox, WebKit, Mobile Chrome and
+  // Mobile Safari. Per-commit CI may scope to chromium for speed; the human
+  // tester runs the 5-project matrix at sprint close.
+  //
+  // WebKit/Mobile Safari need system libs on Linux. On the official Playwright
+  // CI image (mcr.microsoft.com/playwright) they're bundled. On a rolling
+  // Ubuntu (e.g. questing 25.10) `playwright install-deps` FAILS — it pins
+  // package names (libicu74, libxml2, libavif16, libmanette-0.2-0, libwoff1)
+  // that the distro renamed/bumped. Fix once per machine (the noble libs use a
+  // DISTINCT soname, so they coexist with the system's newer ones):
+  //   sudo apt-get install libwoff1 libmanette-0.2-0 libavif16
+  //   # libicu74 + libxml2(.so.2) from the noble pool:
+  //   #   archive.ubuntu.com/ubuntu/pool/main/{i/icu,libx/libxml2}/...
+  //   PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1 npx playwright install
+  // Then run the matrix WITH that same env var set (the validation gate checks
+  // the pinned package names, not the actually-resolvable sonames):
+  //   PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1 npx playwright test --workers=1
+  // Use --workers=1: the flow is stateful (one contratación walked by two
+  // actors) and re-seed per project gives each browser an isolated cliente.
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },

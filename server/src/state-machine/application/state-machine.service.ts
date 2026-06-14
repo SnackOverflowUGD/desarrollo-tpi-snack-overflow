@@ -71,6 +71,13 @@ export class StateMachineService implements IContratacionStateMachine {
     await this.notifyBestEffort(contratacionId, estadoActual, estado);
   }
 
+  async getHistory(contratacionId: string): Promise<StateChangeHistory[]> {
+    return this.historyRepo.find({
+      where: { contratacionId },
+      order: { timestamp: 'ASC' },
+    });
+  }
+
   private async saveHistory(
     contratacionId: string,
     estadoAnterior: ContratacionEstado | null,

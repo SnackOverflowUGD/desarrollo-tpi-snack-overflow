@@ -3,10 +3,11 @@ import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 /**
  * Read model for GET /contrataciones (UC08, ADR-08-02 / REQ-01/02).
  *
- * Same fields as ContratacionResponseDto PLUS `clienteNombre` (name + ' ' +
- * lastName of the client User), resolved in the application layer via
- * USER_REPOSITORY. Kept distinct from ContratacionResponseDto so the list
- * read model can diverge without breaking the proposal/reject contract.
+ * Same fields as ContratacionResponseDto PLUS `clienteNombre` and
+ * `prestadorNombre` (name + ' ' + lastName of the client / provider User),
+ * resolved in the application layer via USER_REPOSITORY. Kept distinct from
+ * ContratacionResponseDto so the list read model can diverge without breaking
+ * the proposal/reject contract.
  */
 export class ContratacionListItemDto {
   id: string;
@@ -14,6 +15,7 @@ export class ContratacionListItemDto {
   prestadorId: string;
   clienteId: string;
   clienteNombre: string;
+  prestadorNombre: string;
   fecha: string;
   franja: string;
   descripcion: string;

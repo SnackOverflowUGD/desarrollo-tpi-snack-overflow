@@ -17,6 +17,7 @@ import { ContratacionService } from './application/contratacion.service.js';
 import { CreateContratacionDto } from './dto/create-contratacion.dto.js';
 import { ContratacionResponseDto } from './dto/contratacion-response.dto.js';
 import { ContratacionListItemDto } from './dto/contratacion-list-item.dto.js';
+import { ContratacionDetailDto } from './dto/contratacion-detail.dto.js';
 import { ListContratacionesQueryDto } from './dto/list-contrataciones-query.dto.js';
 import { SendProposalDto } from './dto/send-proposal.dto.js';
 
@@ -41,6 +42,22 @@ export class ContratacionController {
   ): Promise<ContratacionListItemDto[]> {
     const user = req.user as JwtPayload;
     return this.contratacionService.list(user.sub, user.role, query);
+  }
+
+  /**
+   * UC09 detail + state timeline. `sub`/`role` are derived from the JWT; the
+   * service enforces the participant guard (404 for non-participants — never
+   * leaks existence). Declared AFTER `@Get()` so the static inbox route is not
+   * shadowed by this dynamic `:id` route.
+   */
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  async getDetail(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ): Promise<ContratacionDetailDto> {
+    const user = req.user as JwtPayload;
+    return this.contratacionService.getDetail(id, user.sub, user.role);
   }
 
   @Post()

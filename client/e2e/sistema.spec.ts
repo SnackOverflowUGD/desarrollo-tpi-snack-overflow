@@ -19,8 +19,12 @@
  *  - Serial, single worker — the flow is stateful (one contratación walked through
  *    its states by two actors). Do NOT run in parallel against the reused :3001.
  *  - NO page.route — we want real backend traffic (this is system verification).
- *  - chromium only — WebKit/Mobile Safari need `sudo playwright install-deps`
- *    (not available here); documented as pending in verify.md.
+ *  - Cross-browser matrix GREEN (35/35) on Chromium, Firefox, WebKit, Mobile
+ *    Chrome and Mobile Safari. Run each project with a fresh seed (re-seed
+ *    isolates the shared cliente) and `--workers=1`. WebKit hydrates slower
+ *    under the dev server: `loginUI` refills until the value sticks and
+ *    `reloadSettled` retries gotos that race the actions' router.refresh().
+ *    See playwright.config.ts for the Linux WebKit system-lib setup.
  *  - Sonner injects an empty role="alert"; error banners are scoped to
  *    [data-slot="alert"][role="alert"]. Success is announced via toast role="status".
  *  - State is asserted via the <EstadoBadge/> text (es-AR catalog) which renders on
@@ -52,6 +56,19 @@ test.describe.configure({ mode: "serial" });
 const errorBanner = (page: Page) =>
   page.locator('[data-slot="alert"][role="alert"]');
 
+/**
+ * Reload tolerant of an in-flight client navigation. The estado actions call
+ * router.refresh() (soft RSC nav) on success; on WebKit/Mobile Safari that
+ * refresh can still be in flight when the test reloads, and Playwright aborts
+ * the goto with "interrupted by another navigation". Retrying lets it land
+ * once the soft refresh settles — fast no-op on engines already idle.
+ */
+async function reloadSettled(page: Page, url: string): Promise<void> {
+  await expect(async () => {
+    await page.goto(url);
+  }).toPass({ timeout: 15_000 });
+}
+
 /** Real UI login: fills the form, submits, asserts the so_session cookie is set. */
 async function loginUI(
   context: BrowserContext,
@@ -59,8 +76,22 @@ async function loginUI(
 ): Promise<Page> {
   const page = await context.newPage();
   await page.goto("/login");
-  await page.locator("#email").fill(creds.email);
-  await page.locator("#password").fill(creds.password);
+
+  // WebKit/Mobile Safari hydrate slower than Chromium/Firefox under the dev
+  // server: a `fill` that lands BEFORE react-hook-form attaches its refs gets
+  // clobbered when hydration applies the form's empty defaults (the field then
+  // blurs to a "e-mail inválido" validation error and the typed value is lost).
+  // Refill until the value sticks post-hydration — a no-op on engines that
+  // hydrate before the first fill.
+  const fillStable = async (selector: string, value: string) => {
+    const field = page.locator(selector);
+    await expect(async () => {
+      await field.fill(value);
+      expect(await field.inputValue()).toBe(value);
+    }).toPass({ timeout: 10_000 });
+  };
+  await fillStable("#email", creds.email);
+  await fillStable("#password", creds.password);
   await page.getByRole("button", { name: "Ingresar" }).click();
 
   // Successful login redirects away from /login (to "/" by default).
@@ -215,7 +246,7 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
   });
 
   test("6 — el cliente ve la propuesta en seguimiento y confirma → confirmada", async () => {
-    await clientePage.goto("/cuenta/contrataciones");
+    await reloadSettled(clientePage, "/cuenta/contrataciones");
 
     // The card renders with the real estado badge (Presupuestada).
     await expect(
@@ -246,7 +277,7 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
   });
 
   test("7 — el prestador inicia (en_curso) y finaliza (finalizada)", async () => {
-    await prestadorPage.goto("/cuenta/contrataciones");
+    await reloadSettled(prestadorPage, "/cuenta/contrataciones");
 
     await expect(
       prestadorPage.getByText("Confirmada", { exact: true }).first(),
@@ -263,7 +294,7 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
     // The action uses router.refresh() (soft) after success; reload to get a clean
     // SSR render of the en_curso card (busy reset, Finalizar enabled) — avoids the
     // soft-refresh in-between state where the previous action's `busy` lingers.
-    await prestadorPage.goto("/cuenta/contrataciones");
+    await reloadSettled(prestadorPage, "/cuenta/contrataciones");
 
     // After reload: prestador + en_curso → ["finalizar", "cancelar"].
     await expect(
@@ -300,7 +331,7 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
 
     // And it shows as Finalizada on the prestador's tracking view. The default
     // filter is "Activas" (hides finalizada/cancelada), so switch to "Terminadas".
-    await prestadorPage.goto("/cuenta/contrataciones");
+    await reloadSettled(prestadorPage, "/cuenta/contrataciones");
     await prestadorPage.getByRole("button", { name: "Terminadas" }).click();
     await expect(
       prestadorPage.getByText("Finalizada", { exact: true }).first(),

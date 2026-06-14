@@ -39,6 +39,7 @@ interface Mocks {
 async function makeMocks(): Promise<Mocks> {
   const historyRepo: jest.Mocked<Repository<StateChangeHistory>> = {
     findOne: jest.fn(),
+    find: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
   } as unknown as jest.Mocked<Repository<StateChangeHistory>>;
@@ -426,5 +427,42 @@ describe('StateMachineService.transitionTo()', () => {
       estadoAnterior: ContratacionEstado.EN_CURSO,
       estadoNuevo: ContratacionEstado.FINALIZADA,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getHistory(): read-only timeline, ordered by timestamp ASC
+// ---------------------------------------------------------------------------
+describe('StateMachineService.getHistory()', () => {
+  it('reads the history ordered by timestamp ASC', async () => {
+    const { service, historyRepo } = await makeMocks();
+    const records = [
+      makeHistory({
+        estadoAnterior: null,
+        estadoNuevo: ContratacionEstado.SOLICITADA,
+      }),
+      makeHistory({
+        estadoAnterior: ContratacionEstado.SOLICITADA,
+        estadoNuevo: ContratacionEstado.PRESUPUESTADA,
+      }),
+    ];
+    historyRepo.find.mockResolvedValue(records);
+
+    const result = await service.getHistory('contratacion-uuid-1');
+
+    expect(historyRepo.find).toHaveBeenCalledWith({
+      where: { contratacionId: 'contratacion-uuid-1' },
+      order: { timestamp: 'ASC' },
+    });
+    expect(result).toBe(records);
+  });
+
+  it('returns [] when there are no records', async () => {
+    const { service, historyRepo } = await makeMocks();
+    historyRepo.find.mockResolvedValue([]);
+
+    const result = await service.getHistory('contratacion-uuid-1');
+
+    expect(result).toEqual([]);
   });
 });

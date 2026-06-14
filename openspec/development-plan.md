@@ -96,33 +96,34 @@ sprint quedan pendientes** — el `client/` sigue siendo el scaffold de Next.js.
 | **MI-01.1** | Modelo y persistencia de usuario | Backend | Romero | — | ✅ |
 | **MI-01.2** | Endpoint de registro (`POST /auth/register`) | Backend | Romero | MI-01.1 | ✅ |
 | **MI-01.3** | UI formulario de registro | Frontend | Romero | MI-01.2 | ✅ |
-| **MI-01.4** | Integración del WI al producto de sprint | Integración | Romero | 01.1–01.3 | 🟡 |
+| **MI-01.4** | Integración del WI al producto de sprint | Integración | Romero | 01.1–01.3 | ✅ |
 | **MI-02.1** | Lógica de autenticación y JWT | Backend | Hillebrand | MI-01.1 | ✅ |
 | **MI-02.2** | UI login y manejo de sesión | Frontend | Hillebrand | MI-02.1 | ✅ |
-| **MI-02.3** | Integración del WI al producto de sprint | Integración | Hillebrand | 02.1–02.2 | 🟡 |
+| **MI-02.3** | Integración del WI al producto de sprint | Integración | Hillebrand | 02.1–02.2 | ✅ |
 | **MI-04.1** | Modelo y repositorio de prestador | Backend | Nieto | — | ✅ |
 | **MI-04.2** | Endpoint de búsqueda y filtros | Backend | Nieto | MI-04.1 | ✅ |
 | **MI-04.3** | UI listado y perfil de prestador | Frontend | Nieto | MI-02.2, MI-04.2 | ✅ |
-| **MI-04.4** | Integración del WI al producto de sprint | Integración | Nieto | 04.1–04.3 | 🟡 |
+| **MI-04.4** | Integración del WI al producto de sprint | Integración | Nieto | 04.1–04.3 | ✅ |
 | **MI-07.1** | Modelo y lógica de solicitud | Backend | Pirovani | MI-01.1, MI-04.1 | ✅ |
 | **MI-07.2** | Endpoint crear solicitud + UI | Full-stack | Pirovani | MI-02.2, 07.1, 09.1 | ✅ |
-| **MI-07.3** | Integración del WI al producto de sprint | Integración | Pirovani | 07.1–07.2 | 🟡 |
+| **MI-07.3** | Integración del WI al producto de sprint | Integración | Pirovani | 07.1–07.2 | ✅ |
 | **MI-08.1** | Lógica de propuesta y rechazo | Backend | Pirovani | MI-07.1, MI-09.1 | ✅ |
 | **MI-08.2** | Endpoints + UI de respuesta del prestador | Full-stack | Pirovani | 08.1, 09.2, 07.2 | ✅ |
-| **MI-08.3** | Integración del WI al producto de sprint | Integración | Pirovani | 08.1–08.2 | 🟡 |
+| **MI-08.3** | Integración del WI al producto de sprint | Integración | Pirovani | 08.1–08.2 | ✅ |
 | **MI-09.1** | Máquina de estados de contratación | Backend | Pirovani | — | ✅ |
 | **MI-09.2** | Endpoints de transición de estado | Backend | Pirovani | MI-09.1, MI-07.1 | ✅ |
 | **MI-09.3** | UI gestión y seguimiento | Frontend | Pirovani | 09.2, 08.2, 02.2 | ✅ |
-| **MI-09.4** | Integración del WI al producto de sprint | Integración | Pirovani | 09.1–09.3 | 🟡 |
+| **MI-09.4** | Integración del WI al producto de sprint | Integración | Pirovani | 09.1–09.3 | ✅ |
 | **MI-10** | Integración del sprint al producto continuo | Integración | Todos | UC01,02,04,07,08,09 | ✅ |
 | **MI-11** | Verificación de la integración | Testing | Lezcano, Dos Santos | MI-10 | ✅ |
 
 > **MI-10/MI-11:** integración continua a `main` completa (CI: unit + build + e2e reales por PR).
 > Verificación de **sistema/E2E (Playwright)** cerrada: `client/e2e/sistema.spec.ts` corre el flujo
 > integrado end-to-end (registro→login→búsqueda→perfil→solicitar→presupuestar→confirmar→iniciar→
-> finalizar) contra el stack vivo + seed real (`server/scripts/seed-e2e.sh`), 7/7 verde. Detectó y
-> cerró un bug de integración bloqueante (BFF auth en transiciones, ver `uc09`/commit fix). Pendiente
-> menor: matriz cross-browser (WebKit/Mobile Safari requieren `sudo playwright install-deps`).
+> finalizar) contra el stack vivo + seed real (`server/scripts/seed-e2e.sh`). Detectó y cerró un bug
+> de integración bloqueante (BFF auth en transiciones, ver `uc09`/commit fix). **Matriz cross-browser
+> COMPLETA (35/35):** Chromium, Firefox, WebKit, Mobile Chrome y Mobile Safari (ver `playwright.config.ts`
+> para el setup de libs de WebKit en Linux rolling).
 
 ## Roles por fase (asignación inicial)
 
@@ -156,8 +157,9 @@ Sprint 1 **completo e integrado** a `main`: backend (UC01/02/04/07/08/09) + toda
 (MI-01.3/02.2/04.3/07.2/08.2/09.3) + verificación de sistema (MI-11). Cola de trabajo:
 
 1. ✅ **UIs de Sprint 1**: MI-01.3, MI-02.2, MI-04.3, MI-07.2, MI-08.2, MI-09.3 — todas mergeadas.
-2. ✅ **Verificación de sistema** (MI-11): `client/e2e/sistema.spec.ts` flujo integrado 7/7 verde.
-3. **Follow-ups menores (no bloqueantes):** matriz cross-browser E2E (`sudo playwright install-deps`);
-   timeline de historial de estados (endpoint `GET /contrataciones/:id` con `state_change_history`);
-   enriquecer `ContratacionListItemDto` con `prestadorNombre` (hoy la card del cliente muestra el UUID).
+2. ✅ **Verificación de sistema** (MI-11): `client/e2e/sistema.spec.ts` flujo integrado.
+3. ✅ **Follow-ups menores (cerrados):** matriz cross-browser E2E 35/35 (Chromium/Firefox/WebKit/
+   Mobile Chrome/Mobile Safari); timeline de historial de estados (`GET /contrataciones/:id` →
+   `state_change_history` vía port `getHistory`, UI disclosure en la card); `prestadorNombre` en
+   `ContratacionListItemDto` (la card muestra el nombre, no el UUID).
 4. **Iteración 2:** UC03, UC17, UC05, UC06, UC12, UC13 (vía Pipeline SDD).

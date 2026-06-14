@@ -148,6 +148,7 @@ export interface ContratacionListItem {
   prestadorId: string;
   clienteId: string;
   clienteNombre: string;
+  prestadorNombre: string;
   fecha: string;
   franja: string;
   descripcion: string;
@@ -338,4 +339,84 @@ export async function finalizar(id: string): Promise<ResponderResult> {
 /** Cancel (cliente or prestador participant, active → cancelada). REQ-04. */
 export async function cancelar(id: string): Promise<ResponderResult> {
   return postTransicion(id, "cancel");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UC09 — detail + state timeline (GET /contrataciones/:id). Read-only drill-in
+// over the SAME-ORIGIN BFF Route Handler; never throws for business 4xx.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One state-change timeline entry. Mirror of the backend
+ * `ContratacionHistorialItem`. `timestamp` is an ISO string over the wire.
+ */
+export interface ContratacionHistorialItem {
+  estadoAnterior: ContratacionEstado | null;
+  estadoNuevo: ContratacionEstado;
+  timestamp: string;
+}
+
+/**
+ * Mirror of the backend `ContratacionDetailDto`: the contratación shape plus the
+ * enriched `clienteNombre`/`prestadorNombre` and the chronological `historial`.
+ */
+export interface ContratacionDetail {
+  id: string;
+  ubicacion: string;
+  prestadorId: string;
+  prestadorNombre: string;
+  clienteId: string;
+  clienteNombre: string;
+  fecha: string;
+  franja: string;
+  descripcion: string;
+  fechaPropuesta?: string | null;
+  franjaPropuesta?: string | null;
+  precioEstimado?: number | null;
+  estado: ContratacionEstado;
+  createdAt: string;
+  historial: ContratacionHistorialItem[];
+}
+
+/** Discriminated result of `obtenerDetalle`. NEVER thrown for HTTP errors. */
+export type DetalleResult =
+  | { ok: true; data: ContratacionDetail } // 200
+  | { ok: false; kind: "unauthorized" } // 401 → redirect /login
+  | { ok: false; kind: "no_disponible" } // 404 (inexistent or foreign)
+  | { ok: false; kind: "network" } // transport failure
+  | { ok: false; kind: "server"; status: number }; // 5xx / 502
+
+/**
+ * Fetch a contratación detail + state timeline (UC09 drill-in). The `id` travels
+ * in the URL; the backend enforces the participant guard (404 if foreign).
+ *
+ * Postconditions (OCL): 200 → `{ ok:true, data }`; 401 → 'unauthorized'; 404 →
+ * 'no_disponible'; 5xx/502 → 'server'; transport → 'network'. NEVER throws.
+ */
+export async function obtenerDetalle(id: string): Promise<DetalleResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${ENDPOINT}/${id}`, { method: "GET" });
+  } catch {
+    return { ok: false, kind: "network" };
+  }
+
+  if (response.status === 200) {
+    const data = (await safeJson(response)) as ContratacionDetail | null;
+    if (
+      !data ||
+      typeof data !== "object" ||
+      typeof data.estado !== "string" ||
+      !Array.isArray(data.historial)
+    ) {
+      return { ok: false, kind: "server", status: response.status };
+    }
+    return { ok: true, data };
+  }
+
+  if (response.status === 401) return { ok: false, kind: "unauthorized" };
+  if (response.status === 404) return { ok: false, kind: "no_disponible" };
+
+  // 5xx, 502, or any other unexpected status.
+  return { ok: false, kind: "server", status: response.status };
 }

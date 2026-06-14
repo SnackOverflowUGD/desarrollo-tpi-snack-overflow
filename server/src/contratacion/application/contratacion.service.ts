@@ -20,6 +20,7 @@ import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
 import { ContratacionResponseDto } from '../dto/contratacion-response.dto.js';
 import { ContratacionListItemDto } from '../dto/contratacion-list-item.dto.js';
+import { ContratacionDetailDto } from '../dto/contratacion-detail.dto.js';
 import { ListContratacionesQueryDto } from '../dto/list-contrataciones-query.dto.js';
 import { SendProposalDto } from '../dto/send-proposal.dto.js';
 import {
@@ -243,16 +244,29 @@ export class ContratacionService {
 
     return Promise.all(
       contrataciones.map(async (c) => {
-        const cliente = await this.userRepo.findById(c.clienteId);
+        // Both participants are resolved via USER_REPOSITORY: `clienteId` is a
+        // user id directly, and `prestadorId` references the Prestador catalog
+        // row whose PK IS the provider's user id (the create flow validates it
+        // through userRepo.findById with role PRESTADOR). So the same lookup
+        // mirrors clienteNombre for prestadorNombre. N+1 accepted for the TPI
+        // (documented limit, ADR-08-02); null falls back to a placeholder.
+        const [cliente, prestador] = await Promise.all([
+          this.userRepo.findById(c.clienteId),
+          this.userRepo.findById(c.prestadorId),
+        ]);
         const clienteNombre = cliente
           ? `${cliente.name} ${cliente.lastName}`
           : 'Cliente';
+        const prestadorNombre = prestador
+          ? `${prestador.name} ${prestador.lastName}`
+          : 'Prestador';
         return new ContratacionListItemDto({
           id: c.id,
           ubicacion: c.ubicacion,
           prestadorId: c.prestadorId,
           clienteId: c.clienteId,
           clienteNombre,
+          prestadorNombre,
           fecha: c.fecha,
           franja: c.franja,
           descripcion: c.descripcion,
@@ -264,6 +278,67 @@ export class ContratacionService {
         });
       }),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // UC09: Detail + state timeline (GET /contrataciones/:id)
+  // ---------------------------------------------------------------------------
+  /**
+   * Returns the full contratación plus its state-change timeline. Ownership
+   * guard mirrors the transitions: the requester must be the cliente
+   * (userId === clienteId) OR the prestador participant
+   * (userId === prestadorId, the Prestador→userId link). A non-participant —
+   * or a missing contratación — yields a 404 so existence is never leaked
+   * (RN-CON-07). The history comes through the state-machine port (hexagonal
+   * boundary; the contratacion module never touches the history repo).
+   */
+  async getDetail(
+    id: string,
+    userId: string,
+    _role: string,
+  ): Promise<ContratacionDetailDto> {
+    const contratacion = await this.contratacionRepo.findById(id);
+    if (
+      !contratacion ||
+      (contratacion.clienteId !== userId && contratacion.prestadorId !== userId)
+    ) {
+      throw new NotFoundException('Contratación not found.');
+    }
+
+    const [cliente, prestador, history] = await Promise.all([
+      this.userRepo.findById(contratacion.clienteId),
+      this.userRepo.findById(contratacion.prestadorId),
+      this.stateMachine.getHistory(contratacion.id),
+    ]);
+
+    const clienteNombre = cliente
+      ? `${cliente.name} ${cliente.lastName}`
+      : 'Cliente';
+    const prestadorNombre = prestador
+      ? `${prestador.name} ${prestador.lastName}`
+      : 'Prestador';
+
+    return new ContratacionDetailDto({
+      id: contratacion.id,
+      ubicacion: contratacion.ubicacion,
+      prestadorId: contratacion.prestadorId,
+      prestadorNombre,
+      clienteId: contratacion.clienteId,
+      clienteNombre,
+      fecha: contratacion.fecha,
+      franja: contratacion.franja,
+      descripcion: contratacion.descripcion,
+      fechaPropuesta: contratacion.fechaPropuesta,
+      franjaPropuesta: contratacion.franjaPropuesta,
+      precioEstimado: contratacion.precioEstimado,
+      estado: contratacion.estado,
+      createdAt: contratacion.createdAt,
+      historial: history.map((h) => ({
+        estadoAnterior: h.estadoAnterior,
+        estadoNuevo: h.estadoNuevo,
+        timestamp: h.timestamp,
+      })),
+    });
   }
 
   // ---------------------------------------------------------------------------

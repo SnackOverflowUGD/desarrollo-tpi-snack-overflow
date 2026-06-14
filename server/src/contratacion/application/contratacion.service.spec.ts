@@ -128,6 +128,7 @@ function makeMocks() {
 
   const stateMachine: jest.Mocked<IContratacionStateMachine> = {
     transitionTo: jest.fn(),
+    getHistory: jest.fn(),
   };
 
   const service = new ContratacionService(
@@ -727,6 +728,41 @@ describe('ContratacionService.list()', () => {
     expect(result[0].clienteNombre).toBe('Cliente');
   });
 
+  it('enriches each item with prestadorNombre resolved via USER_REPOSITORY', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
+    // prestadorId references the Prestador row whose PK is the user id.
+    userRepo.findById.mockImplementation(async (id: string) =>
+      id === 'prestador-uuid-1'
+        ? makePrestador({ name: 'Juan', lastName: 'Pérez' })
+        : makeCliente({ name: 'Ana', lastName: 'Gómez' }),
+    );
+
+    const result = await service.list(
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+      query(),
+    );
+
+    expect(userRepo.findById).toHaveBeenCalledWith('prestador-uuid-1');
+    expect(result[0].prestadorNombre).toBe('Juan Pérez');
+    expect(result[0].clienteNombre).toBe('Ana Gómez');
+  });
+
+  it('null prestador → prestadorNombre placeholder "Prestador" (never breaks)', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
+    userRepo.findById.mockResolvedValue(null);
+
+    const result = await service.list(
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+      query(),
+    );
+
+    expect(result[0].prestadorNombre).toBe('Prestador');
+  });
+
   it('preserves repo order (does not reorder)', async () => {
     const { service, contratacionRepo, userRepo } = makeMocks();
     const a = makeContratacion({ id: 'a', clienteId: 'c1' });
@@ -1063,5 +1099,93 @@ describe('ContratacionService.cancel()', () => {
         UserRole.PRESTADOR,
       ),
     ).rejects.toThrow(ConflictException);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC09: getDetail() — detail + state timeline (GET /contrataciones/:id)
+// ---------------------------------------------------------------------------
+describe('ContratacionService.getDetail()', () => {
+  it('cliente participant → detail with enriched names + history (ASC)', async () => {
+    const { service, contratacionRepo, userRepo, stateMachine } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(
+      makeContratacion({ estado: ContratacionEstado.CONFIRMADA }),
+    );
+    userRepo.findById.mockImplementation(async (id: string) =>
+      id === 'prestador-uuid-1'
+        ? makePrestador({ name: 'Juan', lastName: 'Pérez' })
+        : makeCliente({ name: 'Ana', lastName: 'Gómez' }),
+    );
+    stateMachine.getHistory.mockResolvedValue([
+      {
+        id: 'h1',
+        contratacionId: 'contratacion-uuid-1',
+        estadoAnterior: null,
+        estadoNuevo: ContratacionEstado.SOLICITADA,
+        timestamp: new Date('2026-06-10T10:00:00Z'),
+      },
+      {
+        id: 'h2',
+        contratacionId: 'contratacion-uuid-1',
+        estadoAnterior: ContratacionEstado.SOLICITADA,
+        estadoNuevo: ContratacionEstado.PRESUPUESTADA,
+        timestamp: new Date('2026-06-11T10:00:00Z'),
+      },
+    ]);
+
+    const result = await service.getDetail(
+      'contratacion-uuid-1',
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+    );
+
+    expect(result.id).toBe('contratacion-uuid-1');
+    expect(result.clienteNombre).toBe('Ana Gómez');
+    expect(result.prestadorNombre).toBe('Juan Pérez');
+    expect(result.historial).toHaveLength(2);
+    expect(result.historial[0].estadoNuevo).toBe(ContratacionEstado.SOLICITADA);
+    expect(result.historial[1].estadoNuevo).toBe(
+      ContratacionEstado.PRESUPUESTADA,
+    );
+    expect(stateMachine.getHistory).toHaveBeenCalledWith('contratacion-uuid-1');
+  });
+
+  it('prestador participant → allowed (404 not thrown)', async () => {
+    const { service, contratacionRepo, userRepo, stateMachine } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(makeContratacion());
+    userRepo.findById.mockResolvedValue(makeCliente());
+    stateMachine.getHistory.mockResolvedValue([]);
+
+    const result = await service.getDetail(
+      'contratacion-uuid-1',
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+    );
+
+    expect(result.id).toBe('contratacion-uuid-1');
+    expect(result.historial).toEqual([]);
+  });
+
+  it('non-participant → NotFoundException 404 (never leaks existence)', async () => {
+    const { service, contratacionRepo, stateMachine } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(makeContratacion());
+
+    await expect(
+      service.getDetail(
+        'contratacion-uuid-1',
+        'stranger-uuid',
+        UserRole.CLIENTE,
+      ),
+    ).rejects.toThrow(NotFoundException);
+    expect(stateMachine.getHistory).not.toHaveBeenCalled();
+  });
+
+  it('findById null → NotFoundException 404', async () => {
+    const { service, contratacionRepo } = makeMocks();
+    contratacionRepo.findById.mockResolvedValue(null);
+
+    await expect(
+      service.getDetail('nope', 'cliente-uuid-1', UserRole.CLIENTE),
+    ).rejects.toThrow(NotFoundException);
   });
 });

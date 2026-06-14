@@ -15,6 +15,7 @@ import type {
 import type { RolSeguimiento } from "@/lib/api/acciones-contratacion";
 import { EstadoBadge } from "@/components/cuentas/bandeja/estado-badge";
 import { AccionesContratacion } from "@/components/cuentas/seguimiento/acciones-contratacion";
+import { LineaTiempoEstados } from "@/components/cuentas/seguimiento/linea-tiempo-estados";
 
 function DatoLinea({ label, valor }: { label: string; valor: string }) {
   return (
@@ -65,7 +66,7 @@ export function ContratacionCard({
       ? copy.seguimiento.contraparteClienteLabel
       : copy.seguimiento.contraparteCliente;
   const contraparteValor =
-    rol === "cliente" ? item.prestadorId : item.clienteNombre;
+    rol === "cliente" ? item.prestadorNombre : item.clienteNombre;
 
   const paso = proximoPaso(rol, item.estado);
   const mostrarPrecio =
@@ -107,6 +108,8 @@ export function ContratacionCard({
         rol={rol}
         estado={item.estado}
       />
+
+      <LineaTiempoEstados contratacionId={item.id} />
     </li>
   );
 }

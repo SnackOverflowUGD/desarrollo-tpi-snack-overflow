@@ -22,6 +22,7 @@ const ITEM: ContratacionListItem = {
   prestadorId: "p1",
   clienteId: "cli-1",
   clienteNombre: "Ana Gómez",
+  prestadorNombre: "Juan Pérez",
   fecha: "2026-12-31",
   franja: "Mañana (08–12)",
   descripcion: "Arreglo de tablero",

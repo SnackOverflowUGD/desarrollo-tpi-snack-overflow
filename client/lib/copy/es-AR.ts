@@ -517,6 +517,19 @@ export const copy = {
     // network / 5xx acting (REQ-12) — non-technical, no traces.
     errorAccionar:
       "No pudimos completar la acción. Revisá tu conexión e intentá de nuevo.",
+
+    // State timeline (drill-in detail) — es-AR.
+    linea: {
+      toggleVer: "Ver historial de estados",
+      toggleOcultar: "Ocultar historial de estados",
+      titulo: "Historial de estados",
+      cargando: "Cargando historial…",
+      vacio: "Todavía no hay cambios de estado registrados.",
+      error:
+        "No pudimos cargar el historial. Revisá tu conexión e intentá de nuevo.",
+      // Initial state (no previous estado) → "Creada".
+      inicial: "Creada",
+    },
   },
 } as const;
 

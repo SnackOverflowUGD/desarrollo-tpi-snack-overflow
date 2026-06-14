@@ -62,6 +62,24 @@ describe('ContratacionController.list()', () => {
   });
 });
 
+describe('ContratacionController.getDetail()', () => {
+  it('derives sub/role from req.user and delegates with the URL id', async () => {
+    const service = {
+      getDetail: jest.fn().mockResolvedValue({}),
+    } as unknown as jest.Mocked<ContratacionService>;
+    const controller = new ContratacionController(service);
+    const req = makeReq({ sub: 'cliente-uuid-1', role: UserRole.CLIENTE });
+
+    await controller.getDetail('contratacion-uuid-1', req);
+
+    expect(service.getDetail).toHaveBeenCalledWith(
+      'contratacion-uuid-1',
+      'cliente-uuid-1',
+      UserRole.CLIENTE,
+    );
+  });
+});
+
 describe('ContratacionController UC09 transitions (confirm/start/finish/cancel)', () => {
   function setup() {
     const service = {
