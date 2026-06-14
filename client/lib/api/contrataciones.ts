@@ -123,3 +123,177 @@ export async function crearSolicitud(
   // 5xx, 502 (handler→backend transport failure), or any other status.
   return { ok: false, kind: "server", status: response.status };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UC08 — Prestador inbox + responder (ADR-08-01/03, REQ-01/04..12).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Estado strings shared by the backend enum (full set, for the read model). */
+export type ContratacionEstado =
+  | "solicitada"
+  | "presupuestada"
+  | "confirmada"
+  | "cancelada"
+  | "en_curso"
+  | "finalizada";
+
+/**
+ * Mirror of the backend `ContratacionListItemDto` (GET /contrataciones,
+ * enriched with `clienteNombre`; ADR-08-02). `createdAt` is a string over the
+ * wire (JSON-serialized Date).
+ */
+export interface ContratacionListItem {
+  id: string;
+  ubicacion: string;
+  prestadorId: string;
+  clienteId: string;
+  clienteNombre: string;
+  fecha: string;
+  franja: string;
+  descripcion: string;
+  fechaPropuesta?: string | null;
+  franjaPropuesta?: string | null;
+  precioEstimado?: number | null;
+  estado: ContratacionEstado;
+  createdAt: string;
+}
+
+/**
+ * Mirror of the backend `SendProposalDto`. The contratación `id` travels in the
+ * URL, NEVER in the payload (REQ-04); `prestadorId` is derived from the token.
+ */
+export interface SendProposalPayload {
+  fecha: string; // ISO date `YYYY-MM-DD`, today or future
+  franja: string;
+  precioEstimado: number; // > 0
+}
+
+/** Discriminated result of `listarSolicitudes`. NEVER thrown for HTTP errors. */
+export type ListarResult =
+  | { ok: true; items: ContratacionListItem[] } // 200
+  | { ok: false; kind: "unauthorized" } // 401 → redirect /login
+  | { ok: false; kind: "network" } // transport failure
+  | { ok: false; kind: "server"; status: number }; // 5xx / 502
+
+/**
+ * Discriminated result of `enviarPropuesta` / `rechazarSolicitud`. NEVER thrown
+ * for business 4xx. `estado_cambiado` (409) is an EXPECTED concurrency outcome
+ * (REQ-11), not a system failure.
+ */
+export type ResponderResult =
+  | { ok: true; data: ContratacionListItem } // 200 (new estado)
+  | { ok: false; kind: "unauthorized" } // 401 → redirect /login
+  | { ok: false; kind: "forbidden" } // 403 (non-prestador; prevented)
+  | { ok: false; kind: "no_disponible" } // 404 (inexistent or foreign)
+  | { ok: false; kind: "estado_cambiado" } // 409 (concurrency, actionable)
+  | { ok: false; kind: "validacion"; raw?: unknown } // 422 / 400
+  | { ok: false; kind: "network" } // transport failure
+  | { ok: false; kind: "server"; status: number }; // 5xx / 502
+
+/**
+ * List the authenticated user's contrataciones (REQ-01). The backend filters by
+ * the token (prestadorId for a PRESTADOR); only `?estado=` is forwarded.
+ *
+ * Postconditions (OCL): 200 → `{ ok:true, items }`; 401 → 'unauthorized';
+ * 5xx/502 → 'server'; transport failure → 'network'. NEVER throws.
+ */
+export async function listarSolicitudes(
+  filtros?: { estado?: string },
+): Promise<ListarResult> {
+  const qs =
+    filtros?.estado != null && filtros.estado !== ""
+      ? `?estado=${encodeURIComponent(filtros.estado)}`
+      : "";
+
+  let response: Response;
+  try {
+    response = await fetch(`${ENDPOINT}${qs}`, { method: "GET" });
+  } catch {
+    return { ok: false, kind: "network" };
+  }
+
+  if (response.status === 200) {
+    const data = (await safeJson(response)) as ContratacionListItem[] | null;
+    if (!Array.isArray(data)) {
+      return { ok: false, kind: "server", status: response.status };
+    }
+    return { ok: true, items: data };
+  }
+
+  if (response.status === 401) return { ok: false, kind: "unauthorized" };
+
+  // 5xx, 502, or any other unexpected status.
+  return { ok: false, kind: "server", status: response.status };
+}
+
+/**
+ * Shared mapper for proposal/reject responses — both endpoints return the same
+ * status surface and a `ContratacionListItemDto`-shaped body on 200.
+ */
+function mapResponder(
+  response: Response,
+  data: unknown,
+): ResponderResult {
+  if (response.status === 200) {
+    const item = data as ContratacionListItem | null;
+    if (!item || typeof item !== "object" || typeof item.estado !== "string") {
+      return { ok: false, kind: "server", status: response.status };
+    }
+    return { ok: true, data: item };
+  }
+
+  if (response.status === 401) return { ok: false, kind: "unauthorized" };
+  if (response.status === 403) return { ok: false, kind: "forbidden" };
+  if (response.status === 404) return { ok: false, kind: "no_disponible" };
+  if (response.status === 409) return { ok: false, kind: "estado_cambiado" };
+  if (response.status === 422 || response.status === 400) {
+    return { ok: false, kind: "validacion", raw: data ?? undefined };
+  }
+
+  // 5xx, 502, or any other status.
+  return { ok: false, kind: "server", status: response.status };
+}
+
+/**
+ * Send a proposal for a contratación (REQ-04/05). `id` goes in the URL; the
+ * payload NEVER carries `id`/`prestadorId`.
+ *
+ * Postconditions (OCL): 200 → `{ ok:true, data }`; 401 → 'unauthorized'; 403 →
+ * 'forbidden'; 404 → 'no_disponible'; 409 → 'estado_cambiado'; 422/400 →
+ * 'validacion'; 5xx/502 → 'server'; transport → 'network'. NEVER throws for 4xx.
+ */
+export async function enviarPropuesta(
+  id: string,
+  payload: SendProposalPayload,
+): Promise<ResponderResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${ENDPOINT}/${id}/proposal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return { ok: false, kind: "network" };
+  }
+
+  return mapResponder(response, await safeJson(response));
+}
+
+/**
+ * Reject a contratación (REQ-06). No body — the backend processes the intent.
+ *
+ * Postconditions (OCL): same status surface as `enviarPropuesta`. NEVER throws.
+ */
+export async function rechazarSolicitud(
+  id: string,
+): Promise<ResponderResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${ENDPOINT}/${id}/reject`, { method: "POST" });
+  } catch {
+    return { ok: false, kind: "network" };
+  }
+
+  return mapResponder(response, await safeJson(response));
+}

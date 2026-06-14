@@ -19,6 +19,7 @@ import type { IUserRepository } from '../../auth/ports/user.repository.port.js';
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import type { Contratacion } from '../domain/contratacion.entity.js';
 import { CreateContratacionDto } from '../dto/create-contratacion.dto.js';
+import { ListContratacionesQueryDto } from '../dto/list-contrataciones-query.dto.js';
 import type { IAvailabilityService } from '../ports/availability-service.port.js';
 import type { IContratacionRepository } from '../ports/contratacion-repository.port.js';
 import type { IContratacionStateMachine } from '../ports/state-machine.port.js';
@@ -31,9 +32,27 @@ import { ContratacionService } from './contratacion.service.js';
 function makePrestador(overrides: Partial<User> = {}): User {
   return {
     id: 'prestador-uuid-1',
+    name: 'Juan',
+    lastName: 'Pérez',
     email: 'prestador@example.com',
     passwordHash: 'hash',
     role: UserRole.PRESTADOR,
+    status: UserStatus.ACTIVO,
+    providerStatus: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  } as User;
+}
+
+function makeCliente(overrides: Partial<User> = {}): User {
+  return {
+    id: 'cliente-uuid-1',
+    name: 'Ana',
+    lastName: 'Gómez',
+    email: 'cliente@example.com',
+    passwordHash: 'hash',
+    role: UserRole.CLIENTE,
     status: UserStatus.ACTIVO,
     providerStatus: null,
     createdAt: new Date(),
@@ -92,11 +111,13 @@ function makeMocks() {
     findByEmail: jest.fn(),
     findById: jest.fn(),
     updatePasswordHash: jest.fn(),
+    create: jest.fn(),
   };
 
   const contratacionRepo: jest.Mocked<IContratacionRepository> = {
     save: jest.fn(),
     findById: jest.fn(),
+    findByParticipante: jest.fn(),
   };
 
   const availabilityService: jest.Mocked<IAvailabilityService> = {
@@ -620,5 +641,105 @@ describe('ContratacionService.reject()', () => {
     await expect(
       service.reject('contratacion-uuid-1', 'cliente-uuid-1', UserRole.CLIENTE),
     ).rejects.toThrow(ForbiddenException);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UC08: list() — role-aware inbox (GET /contrataciones)
+// ---------------------------------------------------------------------------
+describe('ContratacionService.list()', () => {
+  function query(estado?: ContratacionEstado): ListContratacionesQueryDto {
+    const q = new ListContratacionesQueryDto();
+    q.estado = estado;
+    return q;
+  }
+
+  it('PRESTADOR → filters by prestadorId = userId (isolation)', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
+    userRepo.findById.mockResolvedValue(makeCliente());
+
+    await service.list(
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+      query(ContratacionEstado.SOLICITADA),
+    );
+
+    expect(contratacionRepo.findByParticipante).toHaveBeenCalledWith({
+      prestadorId: 'prestador-uuid-1',
+      estado: ContratacionEstado.SOLICITADA,
+    });
+  });
+
+  it('CLIENTE → filters by clienteId = userId (MI-09.3 branch)', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([]);
+    userRepo.findById.mockResolvedValue(makeCliente());
+
+    await service.list('cliente-uuid-1', UserRole.CLIENTE, query());
+
+    expect(contratacionRepo.findByParticipante).toHaveBeenCalledWith({
+      clienteId: 'cliente-uuid-1',
+      estado: undefined,
+    });
+  });
+
+  it('?estado= is forwarded to the repo; absent estado → undefined', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([]);
+    userRepo.findById.mockResolvedValue(makeCliente());
+
+    await service.list('prestador-uuid-1', UserRole.PRESTADOR, query());
+
+    expect(contratacionRepo.findByParticipante).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: undefined }),
+    );
+  });
+
+  it('enriches each item with clienteNombre = name + " " + lastName', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
+    userRepo.findById.mockResolvedValue(
+      makeCliente({ name: 'Ana', lastName: 'Gómez' }),
+    );
+
+    const result = await service.list(
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+      query(),
+    );
+
+    expect(userRepo.findById).toHaveBeenCalledWith('cliente-uuid-1');
+    expect(result[0].clienteNombre).toBe('Ana Gómez');
+  });
+
+  it('null client → clienteNombre placeholder "Cliente" (never breaks)', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    contratacionRepo.findByParticipante.mockResolvedValue([makeContratacion()]);
+    userRepo.findById.mockResolvedValue(null);
+
+    const result = await service.list(
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+      query(),
+    );
+
+    expect(result[0].clienteNombre).toBe('Cliente');
+  });
+
+  it('preserves repo order (does not reorder)', async () => {
+    const { service, contratacionRepo, userRepo } = makeMocks();
+    const a = makeContratacion({ id: 'a', clienteId: 'c1' });
+    const b = makeContratacion({ id: 'b', clienteId: 'c2' });
+    contratacionRepo.findByParticipante.mockResolvedValue([b, a]);
+    userRepo.findById.mockResolvedValue(makeCliente());
+
+    const result = await service.list(
+      'prestador-uuid-1',
+      UserRole.PRESTADOR,
+      query(),
+    );
+
+    expect(result.map((r) => r.id)).toEqual(['b', 'a']);
   });
 });

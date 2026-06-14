@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -14,12 +16,32 @@ import { JwtPayload } from '../auth/strategies/jwt.strategy.js';
 import { ContratacionService } from './application/contratacion.service.js';
 import { CreateContratacionDto } from './dto/create-contratacion.dto.js';
 import { ContratacionResponseDto } from './dto/contratacion-response.dto.js';
+import { ContratacionListItemDto } from './dto/contratacion-list-item.dto.js';
+import { ListContratacionesQueryDto } from './dto/list-contrataciones-query.dto.js';
 import { SendProposalDto } from './dto/send-proposal.dto.js';
 
 @Controller('contrataciones')
 @UseGuards(AuthGuard('jwt'))
 export class ContratacionController {
   constructor(private readonly contratacionService: ContratacionService) {}
+
+  /**
+   * UC08 (ADR-08-01, REQ-01/08): role-aware inbox.
+   *
+   * `sub`/`role` are derived from the JWT (req.user), NEVER from the query —
+   * the only accepted query param is `?estado=`. AuthGuard('jwt') at the
+   * controller level already returns 401 without a session, so no extra code
+   * is needed here.
+   */
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  async list(
+    @Query() query: ListContratacionesQueryDto,
+    @Req() req: Request,
+  ): Promise<ContratacionListItemDto[]> {
+    const user = req.user as JwtPayload;
+    return this.contratacionService.list(user.sub, user.role, query);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
