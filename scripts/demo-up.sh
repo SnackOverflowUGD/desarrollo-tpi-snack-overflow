@@ -28,6 +28,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SERVER_DIR="$ROOT_DIR/server"
 CLIENT_DIR="$ROOT_DIR/client"
 SEED_SCRIPT="$SERVER_DIR/scripts/seed-demo.sh"
+SEED_BULK_SCRIPT="$SERVER_DIR/scripts/seed-demo-bulk.sh"
 
 # ── Ports ─────────────────────────────────────────────────────────────────────────
 BACKEND_PORT=3000
@@ -114,7 +115,8 @@ check_prereqs() {
   command -v curl >/dev/null 2>&1 || fail "curl not found (required for health polling)."
   command -v npm  >/dev/null 2>&1 || fail "npm not found."
   [[ -x "$SEED_SCRIPT" || -f "$SEED_SCRIPT" ]] || fail "seed script not found at $SEED_SCRIPT"
-  ok "curl, npm, seed script"
+  [[ -x "$SEED_BULK_SCRIPT" || -f "$SEED_BULK_SCRIPT" ]] || fail "bulk seed script not found at $SEED_BULK_SCRIPT"
+  ok "curl, npm, seed scripts"
 }
 
 # ── Wait helpers ────────────────────────────────────────────────────────────────────
@@ -195,6 +197,19 @@ seed_demo() {
   fi
 }
 
+# ── 3b. Bulk seed (pure SQL → only needs Postgres, NOT the backend) ───────────────────
+seed_bulk() {
+  step "Seeding bulk synthetic supply (pure SQL — makes the marketplace look busy)"
+  # ~300 synthetic providers across all trades/localities, INSERTed straight into the
+  # catalog (no users, no API). Idempotent + self-scoping: it only resets prestadores
+  # whose id is NOT a users id, so the API-registered demo providers above survive.
+  if bash "$SEED_BULK_SCRIPT"; then
+    ok "bulk supply seed complete"
+  else
+    fail "bulk supply seed failed — see output above"
+  fi
+}
+
 # ── 4. Tunnel (started BEFORE next so we can capture the host and inject it) ──────────
 start_tunnel() {
   step "Starting cloudflared ephemeral tunnel -> $FRONTEND_URL"
@@ -266,6 +281,7 @@ main() {
   start_infra
   start_backend
   seed_demo
+  seed_bulk         # bulk synthetic supply (pure SQL); needs Postgres only
   start_tunnel      # before Next: capture host, then inject it
   start_frontend
   print_banner
