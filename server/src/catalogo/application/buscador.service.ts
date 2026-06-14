@@ -77,7 +77,6 @@ export class BuscadorService {
       page: dto.page ?? 1,
       pageSize: dto.pageSize ?? 20,
       calificacionMinima: dto.calificacionMin,
-      fechaDisponibilidad: dto.fecha ? new Date(dto.fecha) : undefined,
     };
 
     // Query providers by coverage zone

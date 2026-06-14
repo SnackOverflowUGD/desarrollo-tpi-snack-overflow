@@ -102,7 +102,6 @@ export function BarraBusqueda({
       ubicacion: values.ubicacion.trim(),
       orden: filtros.orden,
       calificacionMin: filtros.calificacionMin,
-      fecha: filtros.fecha,
       pageSize: filtros.pageSize,
       page: 1,
     };

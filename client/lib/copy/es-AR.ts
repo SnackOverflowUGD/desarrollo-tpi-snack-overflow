@@ -240,7 +240,6 @@ export const copy = {
       calificacionMinLabel: "Calificación mínima",
       calificacionMinTodas: "Todas",
       calificacionMinValor: "{n} estrellas o más",
-      fechaLabel: "Disponible desde",
       limpiar: "Limpiar filtros",
     },
 

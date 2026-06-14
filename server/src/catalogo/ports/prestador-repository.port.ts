@@ -13,7 +13,6 @@ export interface BusquedaCriteria {
   ubicacion: Coordenadas;
   categoria?: string;
   calificacionMinima?: number;
-  fechaDisponibilidad?: Date;
   page?: number;
   pageSize?: number;
 }

@@ -2,7 +2,7 @@
 
 /**
  * Filters panel (client, ADR-04-01, REQ-02/12, ESC-UI-04). Controls orden /
- * calificacionMin / fecha. Each change applies via `withFiltroAplicado`
+ * calificacionMin. Each change applies via `withFiltroAplicado`
  * (resets page=1) → router.push; "Limpiar filtros" → `limpiarFiltros`.
  * Order defaults to 'calificacion' (RN-CAT-03).
  *
@@ -24,8 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-
 import { copy } from "@/lib/copy/es-AR";
 import {
   type CriteriosBusqueda,
@@ -123,22 +121,6 @@ function FiltrosControles({
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="fecha">{copy.catalogo.filtros.fechaLabel}</Label>
-        <Input
-          id="fecha"
-          type="date"
-          defaultValue={criterios.fecha ?? ""}
-          onChange={(e) =>
-            push(
-              withFiltroAplicado(criterios, {
-                fecha: e.target.value || undefined,
-              }),
-            )
-          }
-        />
       </div>
 
       <div className="flex flex-col gap-2">

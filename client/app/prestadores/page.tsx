@@ -47,7 +47,6 @@ export default async function PrestadoresPage({
     ubicacion: parsed.ubicacion ?? "",
     orden: parsed.orden ?? DEFAULT_ORDEN,
     calificacionMin: parsed.calificacionMin,
-    fecha: parsed.fecha,
     page: parsed.page ?? 1,
     pageSize: parsed.pageSize ?? DEFAULT_PAGE_SIZE,
   };

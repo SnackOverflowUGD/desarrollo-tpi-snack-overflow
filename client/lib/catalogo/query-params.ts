@@ -18,7 +18,6 @@ export const WHITELIST = [
   "ubicacion",
   "orden",
   "calificacionMin",
-  "fecha",
   "page",
   "pageSize",
 ] as const;
@@ -69,9 +68,6 @@ export function criteriosFromSearchParams(
     out.calificacionMin = calificacionMin;
   }
 
-  const fecha = single(sp.fecha)?.trim();
-  if (fecha) out.fecha = fecha;
-
   const page = parseIntStrict(single(sp.page));
   if (page !== undefined && page >= 1) out.page = page;
 
@@ -111,8 +107,8 @@ export function withFiltroAplicado(
 }
 
 /**
- * "Limpiar filtros": keeps oficio + ubicacion, drops orden/calificacionMin/
- * fecha, resets page to 1 (REQ-02). pageSize is preserved.
+ * "Limpiar filtros": keeps oficio + ubicacion, drops orden/calificacionMin,
+ * resets page to 1 (REQ-02). pageSize is preserved.
  */
 export function limpiarFiltros(c: CriteriosBusqueda): CriteriosBusqueda {
   return {

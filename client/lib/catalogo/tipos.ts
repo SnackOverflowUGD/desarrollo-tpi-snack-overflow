@@ -86,7 +86,6 @@ export interface CriteriosBusqueda {
   ubicacion: string;
   orden?: Orden; // default 'calificacion' (RN-CAT-03)
   calificacionMin?: number; // 1..5
-  fecha?: string;
   page?: number; // default 1
   pageSize?: number; // default 20
 }

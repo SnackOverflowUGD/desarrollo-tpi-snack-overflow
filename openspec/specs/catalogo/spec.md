@@ -33,7 +33,8 @@ El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenam
 | RN-CAT-01 | Solo se muestran prestadores con cuenta **activa** y al menos un servicio **publicado** en el catálogo. Prestadores suspendidos (RF-1.5) o sin servicios no aparecen en resultados. |
 | RN-CAT-02 | La coincidencia de zona de cobertura se determina por la relación entre la **ubicación del cliente** (coordenadas o localidad) y la **zona de cobertura configurada** por el prestador (UC06). Si el prestador no definió zona, se asume solo su localidad registrada. |
 | RN-CAT-03 | El ordenamiento por defecto de los resultados es **por calificación descendente** (más alto primero). A igual calificación, se ordena por **cantidad de reseñas** descendente. |
-| RN-CAT-04 | La **disponibilidad** reflejada en los resultados considera las franjas horarias configuradas por el prestador (UC06) **vigentes a la fecha de la consulta**, excluyendo períodos no disponibles y franjas ya reservadas con contrataciones en estado distinto de *finalizada* o *cancelada*. |
+| RN-CAT-04 | La **disponibilidad** reflejada en los resultados considera las franjas horarias configuradas por el prestador (UC06) **vigentes a la fecha de la consulta**, excluyendo períodos no disponibles y franjas ya reservadas con contrataciones en estado distinto de *finalizada* o *cancelada*. El ordenamiento por disponibilidad (cantidad de franjas libres en los próximos 7 días, DESC) SÍ está soportado; el **filtrado por una fecha específica NO está disponible** porque depende de la agenda real del prestador (UC06), aún no construida (ver PA-06). |
+| RN-CAT-06 | La **paginación** devuelve en `total` la cantidad **real** de prestadores que satisfacen TODOS los criterios (`cuenta activa` + `servicios publicados` + `visible` + `categoria` exacta + `calificación mínima` + zona de cobertura que contiene la ubicación), no la cantidad de elementos de la página actual. El filtro por zona de cobertura (point-in-polygon) se aplica sobre el conjunto completo de candidatos ANTES de recortar la página solicitada, de modo que cada página se llena correctamente y `total` permite calcular la cantidad de páginas. |
 | RN-CAT-05 | El perfil público del prestador muestra: nombre, oficio(s), calificación promedio, cantidad de reseñas, zona de cobertura, y lista de servicios publicados con descripción y rango de precios. No se muestra dirección particular, teléfono ni e-mail hasta que exista una contratación aceptada (UC21) entre el cliente y el prestador. |
 
 ## Escenarios (Given-When-Then)
@@ -73,6 +74,8 @@ El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenam
 - **Dado** que el cliente visualiza los resultados de búsqueda
 - **Cuando** selecciona un prestador de la lista
 - **Entonces** el sistema muestra el perfil público del prestador con: nombre, oficio(s), calificación promedio, reseñas recibidas, zona de cobertura, y lista de servicios publicados con descripción y rango de precios estimado
+- **Y** la lista de **servicios publicados** se carga efectivamente desde la base (los servicios `visible = true` del prestador), no se devuelve vacía
+- **Nota:** las **reseñas** (`resenas`) se devuelven como lista vacía mientras no exista la entidad de reseñas (UC14, iteración 3); el contrato del perfil ya las contempla para cuando se construyan.
 
 ### ESC-07: Criterios de búsqueda vacíos o inválidos
 
@@ -83,8 +86,9 @@ El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenam
 ### ESC-08: Búsqueda con múltiples filtros combinados
 
 - **Dado** que existen prestadores activos en múltiples categorías y zonas
-- **Cuando** el cliente ingresa oficio, ubicación y aplica filtros adicionales (rango de calificación mínima, disponibilidad en fecha específica) y selecciona ordenamiento por distancia
-- **Entonces** el sistema aplica todos los filtros concurrentemente, ordena por distancia, y retorna solo los prestadores que cumplen todas las condiciones
+- **Cuando** el cliente ingresa oficio, ubicación y aplica el filtro de **calificación mínima** y selecciona ordenamiento por distancia
+- **Entonces** el sistema aplica todos los filtros concurrentemente, ordena por distancia, y retorna solo los prestadores que cumplen todas las condiciones, con un `total` que refleja la cantidad real de coincidencias (RN-CAT-06)
+- **Nota:** el **filtro por fecha específica** fue retirado del alcance (ver PA-06). Los filtros combinados soportados son: oficio + ubicación (obligatorios) + calificación mínima (opcional), más los tres ordenamientos (calificación / distancia / disponibilidad).
 
 ## Fuera de alcance
 
@@ -103,4 +107,5 @@ El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenam
 | PA-02 | Supuesto | La "disponibilidad" en resultados de búsqueda muestra un indicador resumido (ej. "Disponible esta semana", "Próxima disponibilidad: 15/06"), no las franjas exactas. El detalle de franjas se ve al solicitar contratación (UC07). |
 | PA-03 | Supuesto | Si el prestador no configuró zona de cobertura explícita (UC06), se asume su localidad de registro como zona de cobertura por defecto. |
 | PA-04 | Pendiente | ¿El ordenamiento por defecto debe ser configurable por el cliente (guardar preferencia) o siempre calificación descendente? Se propone calificación descendente como default. |
-| PA-05 | Pendiente | ¿Se requiere paginación de resultados? Se asume que sí, con un límite de 20 resultados por página, pero debe confirmarse en diseño. |
+| PA-05 | Resuelto | Se requiere paginación de resultados: 20 por página por defecto. `total` MUST reflejar la cantidad real de coincidencias tras aplicar el filtro de zona de cobertura sobre el conjunto completo de candidatos (RN-CAT-06), no la longitud de la página actual. |
+| PA-06 | Resuelto | El **filtro por fecha de disponibilidad** se retira del alcance de UC04. Un filtrado por fecha real requiere la agenda por fecha del prestador (UC06), que aún no está construida; un control que se acepta pero se ignora induce al usuario a error. Se conserva el **ordenamiento por disponibilidad** (franjas libres en próximos 7 días, que sí funciona con el resumen de disponibilidad). El parámetro `fecha` se elimina de la UI, del query-string whitelist del cliente y del plumbing muerto del backend. |

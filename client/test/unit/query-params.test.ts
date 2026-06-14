@@ -39,7 +39,6 @@ describe("criteriosToQueryString", () => {
       ubicacion: "Posadas",
       orden: "distancia",
       calificacionMin: 4,
-      fecha: "2026-07-01",
       page: 2,
       pageSize: 20,
     };
@@ -112,7 +111,6 @@ describe("limpiarFiltros", () => {
       ubicacion: "b",
       orden: "distancia",
       calificacionMin: 4,
-      fecha: "2026-01-01",
       page: 3,
       pageSize: 20,
     };

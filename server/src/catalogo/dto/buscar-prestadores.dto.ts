@@ -33,7 +33,4 @@ export class BuscarPrestadoresDto {
   @Min(1)
   @Max(5)
   calificacionMin?: number;
-
-  @IsOptional()
-  fecha?: string;
 }
