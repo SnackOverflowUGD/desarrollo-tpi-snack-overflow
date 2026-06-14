@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   // Emit .next/standalone with a minimal server.js for a small Docker runtime image.
   output: "standalone",
 
+  // Next 16 dev-server blocks cross-origin requests from unknown hosts. When the demo
+  // runs behind an ephemeral cloudflared tunnel (random *.trycloudflare.com host), the
+  // launcher injects that host via ALLOWED_DEV_ORIGIN so the dev server accepts it.
+  // No env set (normal local dev) -> empty list -> behaves exactly as before.
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGIN
+    ? [process.env.ALLOWED_DEV_ORIGIN]
+    : [],
+
   // Same-origin proxy for the NestJS backend.
   // The backend has NO CORS enabled and exposes routes without a global prefix
   // (e.g. POST /auth/register on :3000). Calling it cross-origin from the browser
