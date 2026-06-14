@@ -4,7 +4,6 @@ import {
   criteriosToQueryString,
   withFiltroAplicado,
   limpiarFiltros,
-  restablecer,
   WHITELIST,
 } from "@/lib/catalogo/query-params";
 import type { CriteriosBusqueda } from "@/lib/catalogo/tipos";
@@ -119,27 +118,5 @@ describe("limpiarFiltros", () => {
     };
     const next = limpiarFiltros(c);
     expect(next).toEqual({ oficio: "a", ubicacion: "b", pageSize: 20, page: 1 });
-  });
-});
-
-describe("restablecer", () => {
-  it("resets to defaults preserving oficio+ubicacion", () => {
-    const c: CriteriosBusqueda = {
-      oficio: "a",
-      ubicacion: "b",
-      orden: "distancia",
-      calificacionMin: 5,
-      fecha: "2026-01-01",
-      page: 7,
-      pageSize: 50,
-    };
-    const next = restablecer(c);
-    expect(next).toEqual({
-      oficio: "a",
-      ubicacion: "b",
-      orden: "calificacion",
-      page: 1,
-      pageSize: 20,
-    });
   });
 });

@@ -232,7 +232,6 @@ export const copy = {
       calificacionMinValor: "{n} estrellas o más",
       fechaLabel: "Disponible desde",
       limpiar: "Limpiar filtros",
-      restablecer: "Restablecer",
     },
 
     // Initial empty state before any search (deep-link / first visit, ADR-04-03).

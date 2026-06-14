@@ -10,8 +10,6 @@ import {
   type CriteriosBusqueda,
   type Orden,
   ORDENES,
-  DEFAULT_ORDEN,
-  DEFAULT_PAGE_SIZE,
 } from "@/lib/catalogo/tipos";
 
 /** The only keys ever serialized to / read from the query string (REQ-02). */
@@ -122,19 +120,5 @@ export function limpiarFiltros(c: CriteriosBusqueda): CriteriosBusqueda {
     ubicacion: c.ubicacion,
     pageSize: c.pageSize,
     page: 1,
-  };
-}
-
-/**
- * "Restablecer": defaults — orden='calificacion', page=1, pageSize=20, and no
- * additional filters; keeps oficio + ubicacion (REQ-02).
- */
-export function restablecer(c: CriteriosBusqueda): CriteriosBusqueda {
-  return {
-    oficio: c.oficio,
-    ubicacion: c.ubicacion,
-    orden: DEFAULT_ORDEN,
-    page: 1,
-    pageSize: DEFAULT_PAGE_SIZE,
   };
 }

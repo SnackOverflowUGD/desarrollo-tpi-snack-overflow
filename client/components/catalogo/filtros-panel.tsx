@@ -3,8 +3,8 @@
 /**
  * Filters panel (client, ADR-04-01, REQ-02/12, ESC-UI-04). Controls orden /
  * calificacionMin / fecha. Each change applies via `withFiltroAplicado`
- * (resets page=1) → router.push; "Limpiar filtros" → `limpiarFiltros`;
- * "Restablecer" → `restablecer`. Order defaults to 'calificacion' (RN-CAT-03).
+ * (resets page=1) → router.push; "Limpiar filtros" → `limpiarFiltros`.
+ * Order defaults to 'calificacion' (RN-CAT-03).
  *
  * Responsive (REQ-12): rendered inline as a sidebar on desktop; on mobile a
  * trigger opens a Radix Dialog drawer (focus-trap + Esc-to-close built in,
@@ -35,7 +35,6 @@ import {
 import {
   criteriosToQueryString,
   limpiarFiltros,
-  restablecer,
   withFiltroAplicado,
 } from "@/lib/catalogo/query-params";
 
@@ -149,13 +148,6 @@ function FiltrosControles({
           onClick={() => push(limpiarFiltros(criterios))}
         >
           {copy.catalogo.filtros.limpiar}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => push(restablecer(criterios))}
-        >
-          {copy.catalogo.filtros.restablecer}
         </Button>
       </div>
     </div>

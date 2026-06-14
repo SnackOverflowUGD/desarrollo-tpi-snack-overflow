@@ -506,15 +506,12 @@ chars UC01 PA-01, teléfono AR). La validación cliente **complementa** pero no 
 - **Ordenamiento (UC04 ESC-02/03/04):** selector segmentado o dropdown — "Calificación" (default
   RN-CAT-03), "Distancia", "Disponibilidad". Estado activo claramente marcado.
 - **Chips de filtro activo:** removibles (×), arriba de los resultados. CTA "Limpiar filtros".
-- **Limpiar vs. Restablecer (reset de defaults, Mandel A.2):** distinguir dos afordancias:
-  - **"Limpiar filtros"** → quita *todos* los filtros adicionales (calificación, disponibilidad,
-    categoría) y los chips activos, dejando solo Oficio + Ubicación. Vacía, no restaura.
-  - **"Restablecer"** → vuelve a los **valores por defecto** del sistema: orden = "Calificación"
-    (RN-CAT-03), página = 1, 20 por página (§5.10), filtros vacíos. Es el "deshacer mis cambios de
-    vista" que pide Mandel A.2 (reset de defaults), no solo un vaciado.
-  - Ambos son `ghost`/`link`, agrupados junto a los chips. "Restablecer" solo se muestra cuando algún
-    valor difiere del default (orden, página o filtros), evitando ruido. Reset no destruye datos: solo
-    afecta la vista de búsqueda; no requiere confirmación.
+- **Limpiar filtros (reset de la vista):** una sola afordancia `ghost` junto a los chips.
+  **"Limpiar filtros"** quita *todos* los filtros adicionales (calificación, disponibilidad,
+  categoría) y los chips activos, dejando solo Oficio + Ubicación, y vuelve a página 1. (Se eliminó el
+  botón separado "Restablecer": como no hay control de `pageSize` y `orden` ausente cae al default
+  "Calificación", producía el mismo resultado observable que "Limpiar" — duplicado confuso.) Reset no
+  destruye datos: solo afecta la vista de búsqueda; no requiere confirmación.
 
 ### 5.5 Rating / estrellas
 
@@ -646,7 +643,7 @@ real (`SOLICITADA→PRESUPUESTADA→CONFIRMADA→EN_CURSO→FINALIZADA/CANCELADA
 
 | Acción | Reversible | Patrón |
 |--------|-----------|--------|
-| **Editar filtros / vista de búsqueda** | Sí | "Restablecer" (§5.4). Reversible directo, sin confirmación. |
+| **Editar filtros / vista de búsqueda** | Sí | "Limpiar filtros" (§5.4). Reversible directo, sin confirmación. |
 | **Quitar un chip de filtro** | Sí | El chip se puede volver a aplicar; opcional toast con "Deshacer" (re-agrega el filtro). |
 | **Cancelar contratación / Rechazar solicitud (→ `CANCELADA`)** | No (transición terminal del dominio) | **Confirm-reversible de dos tiempos:** (1) `AlertDialog` (§5.8) que resume la consecuencia con lenguaje claro ("Vas a cancelar la contratación con *Nombre* del 15/06. Esta acción no se puede deshacer."), botón `destructive`, foco por defecto en "Volver"; (2) tras confirmar, **grace-period**: toast persistente "Contratación cancelada · **Deshacer**" durante ~6–8s; el botón Deshacer revierte al estado previo y la transición a `CANCELADA` recién se **commitea** al expirar la ventana. Solo si el dominio no admite ventana de gracia (commit inmediato) se degrada a confirmación pura — y se **declara el trade-off** de irreversibilidad con su justificación. |
 | **Enviar propuesta (`SOLICITADA→PRESUPUESTADA`)** | Reversible vía corrección | No es destructiva, pero permitir "Editar propuesta" mientras siga `PRESUPUESTADA` (re-enviar corrige precio/fecha). Equivale a un undo funcional. |

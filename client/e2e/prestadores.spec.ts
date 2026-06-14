@@ -208,33 +208,6 @@ test.describe("ESC-UI-04 — Filtros/orden editan la URL (page=1, whitelist)", (
     expect(noReload).toBe(true);
   });
 
-  test('"Restablecer" → orden=calificacion, page=1, pageSize=20, sin filtros', async ({
-    page,
-  }) => {
-    // REQ-02 — restablecer drops calificacionMin/fecha, keeps oficio+ubicacion.
-    await gotoPrestadores(
-      page,
-      "?oficio=Plomero&ubicacion=Cordoba&orden=distancia&calificacionMin=4&page=2",
-    );
-
-    await page
-      .getByRole("complementary", { name: "Filtros" })
-      .getByRole("button", { name: "Restablecer" })
-      .click();
-    // Wait for the SPECIFIC reset (the URL already contained "/prestadores?").
-    await page.waitForURL(
-      (u) =>
-        u.searchParams.get("orden") === "calificacion" &&
-        u.searchParams.get("calificacionMin") === null,
-      { timeout: 10000 },
-    );
-    const url = new URL(page.url());
-    expect(url.searchParams.get("orden")).toBe("calificacion");
-    expect(url.searchParams.get("page")).toBe("1");
-    expect(url.searchParams.get("pageSize")).toBe("20");
-    expect(url.searchParams.get("calificacionMin")).toBeNull(); // dropped
-    expect(url.searchParams.get("oficio")).toBe("Plomero"); // kept
-  });
 
   test('"Limpiar filtros" conserva oficio+ubicación y borra los filtros adicionales', async ({
     page,
