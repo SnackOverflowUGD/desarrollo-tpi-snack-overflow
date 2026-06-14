@@ -361,6 +361,79 @@ export const copy = {
     // 400 fallback summary (role="alert") when no field maps (REQ-10).
     validacionGenerica: "Revisá los datos del formulario.",
   },
+
+  // UC08 — Bandeja del prestador + responder (spec §"Catálogo de mensajes",
+  // REQ-02..15). Every string here is es-AR; nothing is hardcoded in components.
+  bandeja: {
+    // Page / shell (REQ-02).
+    title: "Solicitudes recibidas",
+    subtitle: "Respondé las solicitudes pendientes de tus clientes.",
+
+    // Per-item labels (REQ-02).
+    clienteLabel: "Cliente",
+    ubicacionLabel: "Ubicación",
+    fechaLabel: "Fecha pedida",
+    franjaLabel: "Franja pedida",
+    descripcionLabel: "Descripción",
+    precioLabel: "Precio estimado",
+
+    // Estado badges — texto SIEMPRE visible (WCAG 1.4.1, REQ-15).
+    badges: {
+      solicitada: "Solicitada",
+      presupuestada: "Presupuestada",
+      confirmada: "Confirmada",
+      cancelada: "Cancelada",
+      en_curso: "En curso",
+      finalizada: "Finalizada",
+    },
+
+    // Empty state (200 with [] — neutral, NOT an error; REQ-03, ESC-UI-07).
+    vacio: "No tenés solicitudes pendientes por ahora.",
+
+    // Error listing (network / 5xx — role="alert"; REQ-03, ESC-UI-07).
+    errorListar:
+      "No pudimos cargar tus solicitudes. Revisá tu conexión e intentá de nuevo.",
+    reintentar: "Reintentar",
+
+    // Presupuestar action (REQ-04/05/07).
+    presupuestar: "Presupuestar",
+    presupuestando: "Enviando…",
+    precioPlaceholder: "Ej. 15000",
+    franjaPlaceholder: "Elegí una franja",
+    enviarPropuesta: "Enviar propuesta",
+    cancelarAccion: "Cancelar",
+
+    // Reject action (REQ-06).
+    rechazar: "Rechazar",
+    rechazando: "Rechazando…",
+    confirmarRechazar:
+      "¿Seguro que querés rechazar esta solicitud? No se puede deshacer.",
+    confirmarRechazarSi: "Sí, rechazar",
+
+    // Outcome messages (spec §"Catálogo de mensajes", REQ-05/06/09..12).
+    exitoPresupuestar:
+      "¡Propuesta enviada! El cliente la revisará y te confirmará.",
+    exitoRechazar: "Rechazaste la solicitud. El cliente fue notificado.",
+    // 409 — actionable, NOT a system failure (REQ-11).
+    estadoCambiado:
+      "Esta solicitud ya no se puede responder porque su estado cambió. Actualizamos tu bandeja.",
+    // 404 — no longer available / foreign (REQ-10).
+    noDisponible: "Esta solicitud ya no está disponible.",
+    // 403 — non-prestador (prevented client-side; REQ-09).
+    forbidden: "Solo los prestadores pueden responder solicitudes.",
+    // network / 5xx (REQ-12) — non-technical, no traces.
+    errorResponder:
+      "No pudimos enviar tu respuesta. Revisá tu conexión e intentá de nuevo.",
+
+    // Client validation errors (REQ-07, ESC-UI-05).
+    errors: {
+      precioInvalido: "El precio estimado debe ser mayor a cero.",
+      precioRequerido: "Ingresá un precio estimado.",
+      fechaRequerida: "Elegí una fecha.",
+      fechaPasada: "La fecha de la propuesta debe ser hoy o una fecha futura.",
+      franjaRequerida: "Elegí una franja horaria para la propuesta.",
+    },
+  },
 } as const;
 
 export type Copy = typeof copy;

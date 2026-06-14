@@ -22,6 +22,41 @@ import { backendFetch } from "@/lib/server/backend-fetch";
 // Reads the session cookie at request time — never prerender it.
 export const dynamic = "force-dynamic";
 
+/**
+ * UC08 (ADR-08-03, REQ-01/08): list the authenticated user's contrataciones.
+ *
+ * Forwards the `?estado=` query string VERBATIM to the backend
+ * `GET /contrataciones` (the backend derives the prestadorId/clienteId from the
+ * token — this handler never sends an identity). Status + body are forwarded
+ * verbatim; the sentinel maps to 401, transport failure to 502. The page
+ * Server Component calls `backendFetch` directly; this handler exists for
+ * client-side refreshes and tests.
+ */
+export async function GET(request: Request): Promise<Response> {
+  const { search } = new URL(request.url);
+
+  let result;
+  try {
+    result = await backendFetch(`/contrataciones${search}`);
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 502 });
+  }
+
+  if (result.unauthorized) {
+    return NextResponse.json({ ok: false }, { status: 401 });
+  }
+
+  const { response } = result;
+  let raw: unknown = null;
+  try {
+    raw = await response.json();
+  } catch {
+    raw = null;
+  }
+
+  return NextResponse.json(raw ?? { ok: false }, { status: response.status });
+}
+
 export async function POST(request: Request): Promise<Response> {
   // Re-read the raw client body and forward it as-is. The backend revalidates
   // every field; the client api-layer never sends `clienteId` (REQ-04).

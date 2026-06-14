@@ -9,7 +9,10 @@ import type {
   RegisterResult,
   LoginResult,
 } from "@/lib/api/auth";
-import type { CrearSolicitudResult } from "@/lib/api/contrataciones";
+import type {
+  CrearSolicitudResult,
+  ResponderResult,
+} from "@/lib/api/contrataciones";
 
 export type FieldKey =
   | "name"
@@ -220,6 +223,69 @@ export function mapSolicitudError(
 
     default:
       return { banner: copy.solicitud.redServer };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UC08 — responder (presupuestar/rechazar) error mapping (ADR-08-03, REQ-09..12).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Field keys the proposal form can surface inline. */
+export type ResponderFieldKey = "precioEstimado" | "fecha" | "franja";
+
+/**
+ * Structured UI mapping for a failed `enviarPropuesta`/`rechazarSolicitud`. The
+ * component interprets it:
+ *  - `redirect: true` (401)             → router.push('/login?next=…'); no message.
+ *  - `refresh: true` (404/409)          → router.refresh() to reflect real state.
+ *  - `field` set (422 mapped)           → inline error under that field.
+ *  - `banner` set (403/409/404/4xx/red) → role="alert" message, actionable/retry.
+ *
+ * NEVER exposes backend traces (REQ-12) — every string is an es-AR catalog value.
+ */
+export interface MappedResponderError {
+  redirect?: true;
+  refresh?: true;
+  field?: { key: ResponderFieldKey; message: string };
+  banner?: string;
+}
+
+export function mapResponderError(
+  result: Extract<ResponderResult, { ok: false }>,
+): MappedResponderError {
+  switch (result.kind) {
+    case "unauthorized":
+      // 401 → treat as no session; the component redirects. No visible message.
+      return { redirect: true };
+
+    case "estado_cambiado":
+      // 409 → actionable, refresh the inbox to reflect the new state (REQ-11).
+      return { banner: copy.bandeja.estadoCambiado, refresh: true };
+
+    case "no_disponible":
+      // 404 → inexistent or foreign; refresh + non-error message (REQ-10).
+      return { banner: copy.bandeja.noDisponible, refresh: true };
+
+    case "validacion":
+      // 422/400 → prevented client-side; surface the price/date rule inline.
+      return {
+        field: {
+          key: "precioEstimado",
+          message: copy.bandeja.errors.precioInvalido,
+        },
+      };
+
+    case "forbidden":
+      // 403 → prevented by the inbox (REQ-09); last-resort generic message.
+      return { banner: copy.bandeja.forbidden };
+
+    case "network":
+    case "server":
+      // Transport / 5xx → non-technical banner, retry allowed (REQ-12).
+      return { banner: copy.bandeja.errorResponder };
+
+    default:
+      return { banner: copy.bandeja.errorResponder };
   }
 }
 
