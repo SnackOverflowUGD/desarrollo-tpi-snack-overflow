@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { copy } from "@/lib/copy/es-AR";
 import { backendFetch } from "@/lib/server/backend-fetch";
 import type { ContratacionListItem } from "@/lib/api/contrataciones";
-import { BandejaSolicitudes } from "@/components/cuentas/bandeja/bandeja-solicitudes";
+import { BandejaClient } from "@/components/cuentas/bandeja/bandeja-client";
 import { BandejaError } from "@/components/cuentas/bandeja/bandeja-error";
 
 export const metadata: Metadata = {
@@ -16,23 +16,15 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 /**
- * Prestador inbox page (Server Component, ADR-08-01/03/04, REQ-01/02/03/08,
- * ESC-UI-01/07/08).
- *
- * `proxy.ts` (matcher `/cuenta/:path*`) already guarantees a session BEFORE this
- * renders (anonymous deep-link → 307 /login?next=). We list server-side via
- * `backendFetch('/contrataciones?estado=solicitada')` (no hop to our own BFF):
- *  - unauthorized sentinel / 401 → redirect('/login?next=/cuenta/solicitudes')
- *  - 200 → <BandejaSolicitudes/> (empty array → neutral empty state, REQ-03)
- *  - 5xx / transport failure → <BandejaError/> (role="alert" + retry, REQ-03)
- *
- * The backend filters by `prestadorId = sub` (token), so a non-prestador logged
- * user sees an empty inbox — isolation reinforced by the backend, not just UI.
+ * Prestador inbox page (Server Component).
+ * Lists ALL contrataciones for the prestador (no estado filter).
+ * Client-side tabs filter into: Pendientes (solicitada) / Activas (presupuestada, confirmada, en_curso) / Terminadas (finalizada, cancelada).
  */
 export default async function SolicitudesPage() {
   let result;
   try {
-    result = await backendFetch("/contrataciones?estado=solicitada");
+    // Fetch ALL states for the prestador; client-side tabs filter them
+    result = await backendFetch("/contrataciones");
   } catch {
     return (
       <PageShell>
@@ -71,7 +63,7 @@ export default async function SolicitudesPage() {
 
   return (
     <PageShell>
-      <BandejaSolicitudes items={items} />
+      <BandejaClient items={items} />
     </PageShell>
   );
 }
