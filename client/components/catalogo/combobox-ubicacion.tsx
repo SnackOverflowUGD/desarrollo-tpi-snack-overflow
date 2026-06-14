@@ -73,10 +73,11 @@ export function ComboboxUbicacion({
     return filtrarUbicaciones("").find((u) => u.value === value)?.label ?? value;
   }, [value]);
 
-  // Keep the highlight in range whenever the result set changes.
-  React.useEffect(() => {
-    setHighlight((h) => (resultados.length === 0 ? 0 : Math.min(h, resultados.length - 1)));
-  }, [resultados.length]);
+  // Clamp the highlight into range at render time — the result set shrinks as
+  // the user types. Deriving this (instead of a setState-in-effect) avoids the
+  // cascading-render lint rule and is simpler.
+  const highlightActivo =
+    resultados.length === 0 ? 0 : Math.min(highlight, resultados.length - 1);
 
   function seleccionar(u: Ubicacion) {
     onChange(u.value);
@@ -106,7 +107,7 @@ export function ComboboxUbicacion({
       );
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const u = resultados[highlight];
+      const u = resultados[highlightActivo];
       if (u) seleccionar(u);
     } else if (e.key === "Escape") {
       // Let Radix close, but stop it from bubbling to a parent (e.g. dialog).
@@ -115,8 +116,8 @@ export function ComboboxUbicacion({
   }
 
   const activeId =
-    open && resultados[highlight]
-      ? `ubicacion-opt-${resultados[highlight].id}`
+    open && resultados[highlightActivo]
+      ? `ubicacion-opt-${resultados[highlightActivo].id}`
       : undefined;
 
   return (
@@ -199,7 +200,7 @@ export function ComboboxUbicacion({
             ) : (
               resultados.map((u, i) => {
                 const selected = u.value === value || u === seleccionada;
-                const active = i === highlight;
+                const active = i === highlightActivo;
                 return (
                   <li
                     key={u.id}
