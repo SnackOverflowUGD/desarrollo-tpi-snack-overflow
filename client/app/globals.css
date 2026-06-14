@@ -1,26 +1,208 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Dark mode strategy: class-based (.dark), driven by next-themes. */
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+ * DESIGN TOKENS — single source of truth (DESIGN-SYSTEM §2.6).
+ * These @theme tokens are the contract. Components consume them via Tailwind
+ * utilities (bg-primary, text-on-primary, ring, rounded-md, ...).
+ * shadcn primitives are bridged to these tokens further below.
+ * ========================================================================== */
+@theme {
+  /* ---- Color: surfaces and text ---- */
+  --color-background: #fbfaf7;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f2efea;
+  --color-foreground: #1c1917;
+  --color-muted-foreground: #5c5550;
+  --color-border: #e5e0d8;
+  --color-border-strong: #cbc3b8;
+  --color-ring: #b8431f;
+
+  /* ---- Color: brand ---- */
+  --color-primary: #b8431f;
+  --color-primary-hover: #9a3417;
+  --color-primary-subtle: #fbede7;
+  --color-on-primary: #ffffff;
+  --color-secondary: #1f3a34;
+  --color-secondary-subtle: #e7f0ec;
+  --color-on-secondary: #ffffff;
+  --color-accent: #0e8c5a;
+  --color-accent-subtle: #e2f4ec;
+
+  /* ---- Color: semantic ---- */
+  --color-success: #0e8c5a;
+  --color-success-deep: #0a6e47;
+  --color-success-subtle: #e2f4ec;
+  --color-warning: #b7791f;
+  --color-warning-deep: #92600f;
+  --color-warning-subtle: #fbf1dc;
+  --color-on-warning: #1c1917;
+  --color-error: #c2331f;
+  --color-error-subtle: #fbe7e3;
+  --color-on-error: #ffffff;
+  --color-info: #1f5e8c;
+  --color-info-subtle: #e3eef5;
+
+  /* ---- Color: hiring states (UC07-09) ---- */
+  --color-state-solicitada: #1f5e8c;
+  --color-state-presupuestada: #b7791f;
+  --color-state-confirmada: #0e8c5a;
+  --color-state-encurso: #b8431f;
+  --color-state-finalizada: #5c5550;
+  --color-state-cancelada: #c2331f;
+
+  /* ---- Typography ---- */
+  /* The first family of each token matches the CSS var exposed by next/font
+   * in layout.tsx, so font-display/font-sans/font-mono resolve to the real
+   * self-hosted fonts. */
+  --font-display: var(--font-display-src), "Georgia", serif;
+  --font-sans: var(--font-sans-src), "system-ui", sans-serif;
+  --font-mono: var(--font-mono-src), "ui-monospace", monospace;
+
+  /* ---- Radii ---- */
+  --radius-sm: 0.25rem; /*  4px */
+  --radius-md: 0.5rem; /*   8px */
+  --radius-lg: 0.75rem; /* 12px */
+  --radius-xl: 1rem; /*    16px */
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-xs: 0 1px 2px 0 rgb(28 25 23 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(28 25 23 / 0.08), 0 1px 2px -1px rgb(28 25 23 / 0.08);
+  --shadow-md: 0 4px 12px -2px rgb(28 25 23 / 0.1), 0 2px 6px -2px rgb(28 25 23 / 0.06);
+  --shadow-lg: 0 12px 28px -6px rgb(28 25 23 / 0.14), 0 4px 10px -4px rgb(28 25 23 / 0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ----------------------------------------------------------------------------
+ * Dark mode overrides (DESIGN-SYSTEM §2.6). Note the critical correction:
+ * --color-on-primary inverts to dark ink in dark mode (white on the lightened
+ * primary only reaches ~3:1, fails AA; dark ink reaches ~6:1).
+ * -------------------------------------------------------------------------- */
+.dark {
+  --color-background: #1a1715;
+  --color-surface: #252019;
+  --color-surface-raised: #2e2820;
+  --color-surface-sunken: #15110f;
+  --color-foreground: #f5f1ea;
+  --color-muted-foreground: #a89e94;
+  --color-border: #3a332c;
+  --color-border-strong: #4d4439;
+  --color-ring: #e07a4f;
+  --color-primary: #e07a4f;
+  --color-primary-hover: #ec9069;
+  --color-primary-subtle: #3a241c;
+  --color-on-primary: #1a1715;
+  --color-accent: #2bb57c;
+  --color-accent-subtle: #13352a;
+  --color-success: #2bb57c;
+  --color-success-deep: #2bb57c;
+  --color-success-subtle: #13352a;
+  --color-warning: #e0a53a;
+  --color-warning-deep: #e0a53a;
+  --color-warning-subtle: #33280e;
+  --color-error: #e76a52;
+  --color-error-subtle: #351a14;
+  --color-info: #5ba0ce;
+  --color-info-subtle: #13283a;
+  --color-state-solicitada: #5ba0ce;
+  --color-state-presupuestada: #e0a53a;
+  --color-state-confirmada: #2bb57c;
+  --color-state-encurso: #e07a4f;
+  --color-state-finalizada: #a89e94;
+  --color-state-cancelada: #e76a52;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ----------------------------------------------------------------------------
+ * shadcn/ui compatibility bridge.
+ * shadcn primitives reference --color-{primary,border,ring,input,...} and the
+ * {primary,destructive,...}-foreground convention. We map those names onto our
+ * brand tokens so shadcn primitives consume our tokens (DESIGN-SYSTEM §10.1),
+ * keeping our @theme block as the single source of truth.
+ * -------------------------------------------------------------------------- */
+@theme {
+  --color-input: var(--color-border-strong);
+  --color-primary-foreground: var(--color-on-primary);
+  --color-secondary-foreground: var(--color-on-secondary);
+  --color-muted: var(--color-surface-sunken);
+  --color-accent-foreground: var(--color-on-secondary);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-foreground);
+  --color-popover: var(--color-surface-raised);
+  --color-popover-foreground: var(--color-foreground);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-on-error);
+  --radius: 0.5rem;
+}
+
+/* ----------------------------------------------------------------------------
+ * Base layer (DESIGN-SYSTEM §3, §8).
+ * -------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Headings use the display serif (Fraunces) by brand baseline §3.1. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* Global focus-visible ring — never outline:none without a replacement (§8). */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Inputs/selects/textareas must be >=16px to avoid iOS Safari zoom (§3.2). */
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+
+  /* Respect reduced-motion: disable non-essential animation/transition (§8). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ----------------------------------------------------------------------------
+ * Skip-link: off-screen until focused, then visible. Jumps to #main (§8).
+ * -------------------------------------------------------------------------- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-md);
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
 }

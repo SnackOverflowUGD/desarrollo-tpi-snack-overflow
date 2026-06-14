@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Snack Overflow — Frontend (`client/`)
+
+Next.js 16 (App Router) + React 19 + Tailwind v4 + shadcn/ui. UI in es-AR.
+The binding visual baseline is [`DESIGN-SYSTEM.md`](./DESIGN-SYSTEM.md) (single
+source of truth for tokens, fonts, components, a11y).
 
 ## Getting Started
 
-First, run the development server:
+The NestJS backend owns port **3000**, so run the frontend on **3001**:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev -- -p 3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Backend proxy (no CORS)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The browser never calls the backend cross-origin. Instead, the client calls the
+same-origin relative path `/api/...`, which Next rewrites to the backend (see
+`next.config.ts`). For example, registration POSTs to `/api/auth/register` and
+is proxied to `http://localhost:3000/auth/register`.
 
-## Learn More
+The backend base URL is configurable via the **server-only** `BACKEND_URL` env
+var (default `http://localhost:3000`). No `NEXT_PUBLIC_*` var is needed.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# optional override
+BACKEND_URL=http://localhost:3000 npm run dev -- -p 3001
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Tailwind v4**: CSS-native config. Tokens live in `app/globals.css` inside
+  the `@theme { }` block (no `tailwind.config.js`).
+- **Fonts**: Fraunces (display), Figtree (sans), IBM Plex Mono (mono) via
+  `next/font/google`, wired to the `@theme` font tokens.
+- **Forms**: react-hook-form + zod. Validation schema in `lib/validation/`.
+- **Dark mode**: class-based via `next-themes` (first-class theme).
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev      # dev server (use -- -p 3001)
+npm run build    # production build
+npm run lint     # eslint
+npm run test:e2e # playwright
+```
