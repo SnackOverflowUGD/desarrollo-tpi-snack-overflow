@@ -9,7 +9,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text'],
-      all: true,
       include: [
         'lib/errors/field-errors.ts',
         'lib/validation/password-strength.ts',

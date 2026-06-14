@@ -8,7 +8,7 @@ import { copy } from '@/lib/copy/es-AR'
 import type { BackendValidationError } from '@/lib/api/auth'
 
 // All known es-AR catalog values for field errors.
-const CATALOG_VALUES = new Set(Object.values(copy.fieldErrors))
+const CATALOG_VALUES = new Set<string>(Object.values(copy.fieldErrors))
 
 function makeBody(messages: unknown[]): BackendValidationError {
   return {
