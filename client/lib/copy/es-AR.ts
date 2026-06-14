@@ -434,6 +434,90 @@ export const copy = {
       franjaRequerida: "Elegí una franja horaria para la propuesta.",
     },
   },
+
+  // ───────────────────────────────────────────────────────────────────────
+  // UC09 — seguimiento y gestión de estados (spec §Catálogo, REQ-06/09/11/12).
+  // ───────────────────────────────────────────────────────────────────────
+  seguimiento: {
+    // Page / shell (REQ-05).
+    title: "Mis contrataciones",
+    subtitle: "Seguí el estado de tus contrataciones y gestioná cada paso.",
+
+    // Per-item labels (REQ-06).
+    contraparteClienteLabel: "Prestador",
+    contraparteCliente: "Cliente",
+    ubicacionLabel: "Ubicación",
+    fechaLabel: "Fecha",
+    franjaLabel: "Franja",
+    precioLabel: "Precio estimado",
+
+    // Filter (REQ-05 — activas vs. terminadas).
+    filtroLabel: "Filtrar por estado",
+    filtroActivas: "Activas",
+    filtroTerminadas: "Terminadas",
+    filtroTodas: "Todas",
+
+    // "Próximo paso" por (rol, estado) — catálogo es-AR EXACTO (REQ-06).
+    proximoPaso: {
+      clientePresupuestada:
+        "El prestador te envió una propuesta. Revisala y confirmá o rechazá.",
+      clienteConfirmada:
+        "Confirmaste la contratación. El prestador registrará el inicio del trabajo.",
+      prestadorConfirmada:
+        "Acordado. Cuando arranques el trabajo, registrá el inicio.",
+      prestadorEnCurso:
+        "Trabajo en curso. Cuando termines, confirmá la finalización.",
+      finalizada: "Servicio finalizado.",
+      cancelada: "Esta contratación fue cancelada.",
+    },
+
+    // Action labels (REQ-07).
+    acciones: {
+      confirmar: "Confirmar",
+      iniciar: "Iniciar",
+      finalizar: "Finalizar",
+      cancelar: "Cancelar",
+      rechazar: "Rechazar",
+    },
+
+    // Success messages — catálogo es-AR (REQ-11).
+    exito: {
+      confirmar:
+        "¡Listo! Confirmaste la propuesta. El prestador va a iniciar el trabajo.",
+      iniciar:
+        "Registraste el inicio del trabajo. La contratación está en curso.",
+      finalizar: "Confirmaste la finalización del servicio. ¡Gracias!",
+      cancelar: "Cancelaste la contratación.",
+    },
+
+    // Confirmation prompts for irreversible actions (REQ-09).
+    confirmar: {
+      finalizar: "¿Confirmás que el servicio finalizó? No se puede deshacer.",
+      cancelar:
+        "¿Seguro que querés cancelar esta contratación? No se puede deshacer.",
+      si: "Sí, confirmar",
+      no: "No, volver",
+    },
+
+    // Outcome mapping (REQ-12/13).
+    // 409 — actionable, NOT a system failure (REQ-12).
+    estadoCambiado:
+      "Esta acción ya no es posible porque el estado de la contratación cambió. Actualizamos tu vista.",
+    // 404 — no longer available / foreign (REQ-13).
+    noDisponible: "Esta contratación ya no está disponible.",
+    // 403 — prevented client-side via accionesPara (REQ-07).
+    forbidden:
+      "No tenés permiso para realizar esta acción sobre la contratación.",
+    // Empty state (200 with [] — neutral, NOT an error; ESC-UI-10).
+    vacio: "Todavía no tenés contrataciones.",
+    // network / 5xx listing (role="alert"; ESC-UI-10).
+    errorListar:
+      "No pudimos cargar tus contrataciones. Revisá tu conexión e intentá de nuevo.",
+    reintentar: "Reintentar",
+    // network / 5xx acting (REQ-12) — non-technical, no traces.
+    errorAccionar:
+      "No pudimos completar la acción. Revisá tu conexión e intentá de nuevo.",
+  },
 } as const;
 
 export type Copy = typeof copy;
