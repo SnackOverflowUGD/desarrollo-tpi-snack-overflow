@@ -421,6 +421,13 @@ export const copy = {
     title: "Solicitudes recibidas",
     subtitle: "Respondé las solicitudes pendientes de tus clientes.",
 
+    // Tabs (nueva clasificación: Pendientes / Activas / Terminadas).
+    tabs: {
+      pendientes: "Pendientes",
+      activas: "Activas",
+      terminadas: "Terminadas",
+    },
+
     // Per-item labels (REQ-02).
     clienteLabel: "Cliente",
     ubicacionLabel: "Ubicación",
@@ -441,6 +448,8 @@ export const copy = {
 
     // Empty state (200 with [] — neutral, NOT an error; REQ-03, ESC-UI-07).
     vacio: "No tenés solicitudes pendientes por ahora.",
+    vacioActivas: "No tenés trabajos activos por ahora.",
+    vacioTerminadas: "No tenés trabajos finalizados por ahora.",
 
     // Error listing (network / 5xx — role="alert"; REQ-03, ESC-UI-07).
     errorListar:
