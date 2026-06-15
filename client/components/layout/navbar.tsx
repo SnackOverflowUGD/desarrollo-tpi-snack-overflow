@@ -75,7 +75,7 @@ export function Navbar() {
         <div className="hidden items-center gap-2 sm:flex">
           {isAuthenticated && (
             <span
-              className="flex items-center gap-1.5 text-sm text-muted-foreground"
+              className="flex items-center gap-2"
               data-testid="nav-account"
             >
               {/* Role indicator — NOT a button: a muted dot + caption text, no
@@ -89,11 +89,11 @@ export function Navbar() {
                 {roleLabel}
               </span>
               {session.user?.name && session.user?.lastName ? (
-                <span className="max-w-[20ch] truncate">
+                <span className="max-w-[20ch] truncate text-xs font-semibold text-foreground">
                   {session.user.name} {session.user.lastName}
                 </span>
               ) : session.user?.email ? (
-                <span className="max-w-[16ch] truncate">
+                <span className="max-w-[16ch] truncate text-xs text-muted-foreground">
                   {session.user.email}
                 </span>
               ) : null}
@@ -133,10 +133,10 @@ export function Navbar() {
           className="w-full justify-start"
         />
         {isAuthenticated && (
-          <p className="px-2 text-sm text-muted-foreground" data-testid="nav-account-mobile">
-            <span className="font-medium text-foreground">{roleLabel}</span>
+          <p className="px-2 text-xs text-muted-foreground" data-testid="nav-account-mobile">
+            <span className="font-semibold text-foreground">{roleLabel}</span>
             {session.user?.name && session.user?.lastName
-              ? ` · ${session.user.name} ${session.user.lastName}`
+              ? <span className="font-semibold text-foreground">{` · ${session.user.name} ${session.user.lastName}`}</span>
               : session.user?.email
                 ? ` · ${session.user.email}`
                 : ""}
