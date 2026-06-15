@@ -47,11 +47,21 @@ function maxAgeFromToken(token: string): number {
 /**
  * Persist the accessToken as the session cookie. maxAge tracks the JWT `exp`
  * so the cookie disappears when the token can no longer be valid (RN-AUTH-06).
+ *
+ * The `secure` flag is determined from the request context when available:
+ *  - `x-forwarded-proto: https` (Cloudflare/proxy) → true
+ *  - local HTTP → false
+ * This avoids rejection when the app is accessed over plain HTTP but NODE_ENV
+ * is production (common behind a local proxy or tunnel).
  */
-export async function setSessionCookie(token: string): Promise<void> {
+export async function setSessionCookie(
+  token: string,
+  options?: { secure?: boolean },
+): Promise<void> {
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
     ...cookieOptions,
+    secure: options?.secure ?? (process.env.NODE_ENV === "production"),
     maxAge: maxAgeFromToken(token),
   });
 }
@@ -83,6 +93,11 @@ export async function getInitialSession(): Promise<SessionState> {
   const claims = decodeJwtClaims(token);
   return {
     status: "authenticated",
-    user: { email: claims?.email, role: claims?.role, name: claims?.name },
+    user: {
+      email: claims?.email,
+      role: claims?.role,
+      name: claims?.name,
+      lastName: claims?.lastName,
+    },
   };
 }
