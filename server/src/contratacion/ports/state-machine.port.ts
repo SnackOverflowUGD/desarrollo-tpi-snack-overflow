@@ -1,5 +1,6 @@
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 import type { StateChangeHistory } from '../../state-machine/domain/state-change-history.entity.js';
+import { type TxContext } from '../../persistence/ports/transaction-runner.port.js';
 
 export const STATE_MACHINE = 'STATE_MACHINE';
 
@@ -7,6 +8,7 @@ export interface IContratacionStateMachine {
   transitionTo(
     contratacionId: string,
     estado: ContratacionEstado,
+    tx?: TxContext,
   ): Promise<void>;
 
   /**

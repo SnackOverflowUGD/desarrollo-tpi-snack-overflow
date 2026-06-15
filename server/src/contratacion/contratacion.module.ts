@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmUserRepository } from '../auth/adapters/typeorm-user.repository.js';
 import { User } from '../auth/domain/user.entity.js';
 import { USER_REPOSITORY } from '../auth/ports/user.repository.port.js';
+import { PersistenceModule } from '../persistence/persistence.module.js';
 import { StateMachineModule } from '../state-machine/state-machine.module.js';
 import { TypeOrmContratacionRepository } from './adapters/typeorm-contratacion.repository.js';
 import { ContratacionService } from './application/contratacion.service.js';
@@ -53,7 +54,11 @@ class StubAvailabilityService implements IAvailabilityService {
 }
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Contratacion, User]), StateMachineModule],
+  imports: [
+    TypeOrmModule.forFeature([Contratacion, User]),
+    PersistenceModule,
+    StateMachineModule,
+  ],
   controllers: [ContratacionController],
   providers: [
     ContratacionService,

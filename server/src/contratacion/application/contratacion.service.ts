@@ -7,8 +7,6 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
 import { UserRole } from '../../auth/domain/user-role.enum.js';
 import { UserStatus } from '../../auth/domain/user-status.enum.js';
 import {
@@ -36,13 +34,18 @@ import {
   STATE_MACHINE,
   type IContratacionStateMachine,
 } from '../ports/state-machine.port.js';
+import {
+  TRANSACTION_RUNNER,
+  type ITransactionRunner,
+} from '../../persistence/ports/transaction-runner.port.js';
 
 @Injectable()
 export class ContratacionService {
   private readonly logger = new Logger(ContratacionService.name);
 
   constructor(
-    @InjectDataSource() private readonly dataSource: DataSource,
+    @Inject(TRANSACTION_RUNNER)
+    private readonly txRunner: ITransactionRunner,
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
     @Inject(CONTRATACION_REPOSITORY)
     private readonly contratacionRepo: IContratacionRepository,
@@ -55,34 +58,38 @@ export class ContratacionService {
   /**
    * Create a new contratación with atomicity guarantees.
    *
-   * The entire operation is wrapped in a TypeORM QueryRunner transaction:
-   * if any step fails, the DB transaction is rolled back AND the reserved
-   * slot is released (compensating action) — ensuring no inconsistent state.
+   * The entity INSERT and the first `state_change_history` row commit/rollback
+   * together inside a single `runInTransaction` (RN-ACID-01/03/05). The franja
+   * reservation is NOT part of the DB transaction (it is an external resource),
+   * so its compensating action (`release`) runs in the `catch` that wraps the
+   * Unit-of-Work. Guards (rol/prestador/fecha) run BEFORE opening the tx.
    *
-   * Flow (mapped from design.md §Data Flow):
-   *   1. Validate prestador exists + is active (RN-CON-05)
-   *   2. Validate fecha ≥ today (RN-CON-06)
-   *   3. Verify franja availability
-   *   4. Reserve franja
-   *   5. Create Contratacion with estado SOLICITADA (RN-CON-03)
-   *   6. Invoke UC09 state machine transition → SOLICITADA
-   *   7. Commit transaction → 201
+   * Flow (mapped from design.md §Data Flow / D4):
+   *   1. Authorization gate (RN-CON-01) — outside tx
+   *   2. Validate prestador exists + is active (RN-CON-05) — outside tx
+   *   3. Validate fecha ≥ today (RN-CON-06) — outside tx
+   *   ── runInTransaction(tx) ──
+   *   4. Verify franja availability
+   *   5. Persist Contratacion (estado SOLICITADA) enlisted in tx (RN-CON-03)
+   *   6. Reserve franja (external resource; compensated on failure)
+   *   7. State machine transition → SOLICITADA (history INSERT enlisted in tx)
+   *   ── commit / rollback ──
    *
-   * On any failure: rollback + release slot → 409 / 422 / 404 / 500
+   * On any failure: rollback (automatic) + release slot if it was reserved.
    */
   async create(
     dto: CreateContratacionDto,
     clienteId: string,
     clienteRole: string,
   ): Promise<ContratacionResponseDto> {
-    // ── Authorization gate (RNF-S.1 / RN-CON-01) ──
+    // ── Authorization gate (RNF-S.1 / RN-CON-01) — outside tx ──
     if ((clienteRole as UserRole) !== UserRole.CLIENTE) {
       throw new ForbiddenException(
         'Only authenticated clients can create contrataciones.',
       );
     }
 
-    // ── Step 1: Validate prestador exists and is active (RN-CON-05) ──
+    // ── Validate prestador exists and is active (RN-CON-05) — outside tx ──
     const prestador = await this.userRepo.findById(dto.prestadorId);
     if (
       !prestador ||
@@ -92,7 +99,7 @@ export class ContratacionService {
       throw new NotFoundException('Prestador not found or not available.');
     }
 
-    // ── Step 2: Validate fecha is today or future (RN-CON-06) ──
+    // ── Validate fecha is today or future (RN-CON-06) — outside tx ──
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const fechaDate = new Date(dto.fecha);
@@ -102,56 +109,54 @@ export class ContratacionService {
       );
     }
 
-    // ── Begin atomic transaction ──
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     let slotReserved = false;
 
     try {
-      // ── Step 3: Verify franja availability ──
-      const available = await this.availabilityService.isAvailable(
-        dto.prestadorId,
-        dto.fecha,
-        dto.franja,
-      );
-      if (!available) {
-        throw new ConflictException(
-          'The selected time slot is no longer available. Please choose another.',
+      const saved = await this.txRunner.runInTransaction(async (tx) => {
+        // ── Verify franja availability ──
+        const available = await this.availabilityService.isAvailable(
+          dto.prestadorId,
+          dto.fecha,
+          dto.franja,
         );
-      }
+        if (!available) {
+          throw new ConflictException(
+            'The selected time slot is no longer available. Please choose another.',
+          );
+        }
 
-      // ── Step 4: Build entity ──
-      const contratacion = new Contratacion();
-      contratacion.ubicacion = dto.ubicacion;
-      contratacion.prestadorId = dto.prestadorId;
-      contratacion.clienteId = clienteId;
-      contratacion.fecha = dto.fecha;
-      contratacion.franja = dto.franja;
-      contratacion.descripcion = dto.descripcion;
-      contratacion.estado = ContratacionEstado.SOLICITADA;
+        // ── Build entity ──
+        const contratacion = new Contratacion();
+        contratacion.ubicacion = dto.ubicacion;
+        contratacion.prestadorId = dto.prestadorId;
+        contratacion.clienteId = clienteId;
+        contratacion.fecha = dto.fecha;
+        contratacion.franja = dto.franja;
+        contratacion.descripcion = dto.descripcion;
+        contratacion.estado = ContratacionEstado.SOLICITADA;
 
-      // ── Step 5: Persist within transaction ──
-      const saved = await queryRunner.manager.save(contratacion);
+        // ── Persist within transaction ──
+        const persisted = await this.contratacionRepo.save(contratacion, tx);
 
-      // ── Step 6: Reserve franja ──
-      await this.availabilityService.reserve(
-        dto.prestadorId,
-        dto.fecha,
-        dto.franja,
-        saved.id,
-      );
-      slotReserved = true;
+        // ── Reserve franja (external resource) ──
+        await this.availabilityService.reserve(
+          dto.prestadorId,
+          dto.fecha,
+          dto.franja,
+          persisted.id,
+        );
+        slotReserved = true;
 
-      // ── Step 7: Invoke UC09 state machine → estado solicitada (RN-CON-03) ──
-      await this.stateMachine.transitionTo(
-        saved.id,
-        ContratacionEstado.SOLICITADA,
-      );
+        // ── State machine → SOLICITADA (history INSERT enlisted in tx) ──
+        await this.stateMachine.transitionTo(
+          persisted.id,
+          ContratacionEstado.SOLICITADA,
+          tx,
+        );
 
-      // ── Commit ──
-      await queryRunner.commitTransaction();
+        return persisted;
+      });
+
       this.logger.log(`CONTRATACION_CREATED id=${saved.id}`);
 
       return new ContratacionResponseDto({
@@ -166,14 +171,6 @@ export class ContratacionService {
         createdAt: saved.createdAt,
       });
     } catch (error) {
-      // ── Rollback DB transaction ──
-      try {
-        await queryRunner.rollbackTransaction();
-      } catch {
-        // Best-effort: if rollback fails, the connection might be broken
-        this.logger.error('ROLLBACK_FAILED during contratacion creation');
-      }
-
       // ── Compensating action: release slot if it was reserved ──
       if (slotReserved) {
         try {
@@ -205,8 +202,6 @@ export class ContratacionService {
         `CONTRATACION_CREATION_FAILED prestadorId=${dto.prestadorId} error=${(error as Error).message}`,
       );
       throw error;
-    } finally {
-      await queryRunner.release();
     }
   }
 
@@ -396,14 +391,16 @@ export class ContratacionService {
     contratacion.precioEstimado = dto.precioEstimado;
     contratacion.estado = ContratacionEstado.PRESUPUESTADA;
 
-    // 7. Save (simple save, no QueryRunner)
-    const saved = await this.contratacionRepo.save(contratacion);
-
-    // 8. Invoke UC09 state machine transition → PRESUPUESTADA
-    await this.stateMachine.transitionTo(
-      saved.id,
-      ContratacionEstado.PRESUPUESTADA,
-    );
+    // 7. Atomic: entity UPDATE + history INSERT commit/rollback together
+    const saved = await this.txRunner.runInTransaction(async (tx) => {
+      const persisted = await this.contratacionRepo.save(contratacion, tx);
+      await this.stateMachine.transitionTo(
+        persisted.id,
+        ContratacionEstado.PRESUPUESTADA,
+        tx,
+      );
+      return persisted;
+    });
 
     this.logger.log(`PROPOSAL_SENT id=${saved.id}`);
 
@@ -455,15 +452,19 @@ export class ContratacionService {
       );
     }
 
-    // 5. Update estado and save
+    // 5. Update estado
     contratacion.estado = ContratacionEstado.CANCELADA;
-    const saved = await this.contratacionRepo.save(contratacion);
 
-    // 6. Invoke UC09 state machine transition → CANCELADA
-    await this.stateMachine.transitionTo(
-      saved.id,
-      ContratacionEstado.CANCELADA,
-    );
+    // 6. Atomic: entity UPDATE + history INSERT commit/rollback together
+    const saved = await this.txRunner.runInTransaction(async (tx) => {
+      const persisted = await this.contratacionRepo.save(contratacion, tx);
+      await this.stateMachine.transitionTo(
+        persisted.id,
+        ContratacionEstado.CANCELADA,
+        tx,
+      );
+      return persisted;
+    });
 
     this.logger.log(`REQUEST_REJECTED id=${saved.id}`);
 
@@ -516,15 +517,20 @@ export class ContratacionService {
       );
     }
 
-    // 4. Set estado + save
+    // 4. Set estado
     contratacion.estado = ContratacionEstado.CONFIRMADA;
-    const saved = await this.contratacionRepo.save(contratacion);
 
-    // 5. State machine transition (2nd barrier, defense in depth)
-    await this.stateMachine.transitionTo(
-      saved.id,
-      ContratacionEstado.CONFIRMADA,
-    );
+    // 5. Atomic: entity UPDATE + history INSERT commit/rollback together
+    //    (state machine is the 2nd barrier, defense in depth, inside the tx)
+    const saved = await this.txRunner.runInTransaction(async (tx) => {
+      const persisted = await this.contratacionRepo.save(contratacion, tx);
+      await this.stateMachine.transitionTo(
+        persisted.id,
+        ContratacionEstado.CONFIRMADA,
+        tx,
+      );
+      return persisted;
+    });
 
     this.logger.log(`CONTRATACION_CONFIRMED id=${saved.id}`);
 
@@ -557,12 +563,19 @@ export class ContratacionService {
       );
     }
 
-    // 4. Set estado + save
+    // 4. Set estado
     contratacion.estado = ContratacionEstado.EN_CURSO;
-    const saved = await this.contratacionRepo.save(contratacion);
 
-    // 5. State machine transition (2nd barrier)
-    await this.stateMachine.transitionTo(saved.id, ContratacionEstado.EN_CURSO);
+    // 5. Atomic: entity UPDATE + history INSERT commit/rollback together
+    const saved = await this.txRunner.runInTransaction(async (tx) => {
+      const persisted = await this.contratacionRepo.save(contratacion, tx);
+      await this.stateMachine.transitionTo(
+        persisted.id,
+        ContratacionEstado.EN_CURSO,
+        tx,
+      );
+      return persisted;
+    });
 
     this.logger.log(`CONTRATACION_STARTED id=${saved.id}`);
 
@@ -595,15 +608,19 @@ export class ContratacionService {
       );
     }
 
-    // 4. Set estado + save
+    // 4. Set estado
     contratacion.estado = ContratacionEstado.FINALIZADA;
-    const saved = await this.contratacionRepo.save(contratacion);
 
-    // 5. State machine transition (2nd barrier)
-    await this.stateMachine.transitionTo(
-      saved.id,
-      ContratacionEstado.FINALIZADA,
-    );
+    // 5. Atomic: entity UPDATE + history INSERT commit/rollback together
+    const saved = await this.txRunner.runInTransaction(async (tx) => {
+      const persisted = await this.contratacionRepo.save(contratacion, tx);
+      await this.stateMachine.transitionTo(
+        persisted.id,
+        ContratacionEstado.FINALIZADA,
+        tx,
+      );
+      return persisted;
+    });
 
     this.logger.log(`CONTRATACION_FINISHED id=${saved.id}`);
 
@@ -640,15 +657,19 @@ export class ContratacionService {
       );
     }
 
-    // 3. Set estado + save (any active state → cancelada)
+    // 3. Set estado (any active state → cancelada)
     contratacion.estado = ContratacionEstado.CANCELADA;
-    const saved = await this.contratacionRepo.save(contratacion);
 
-    // 4. State machine transition (2nd barrier)
-    await this.stateMachine.transitionTo(
-      saved.id,
-      ContratacionEstado.CANCELADA,
-    );
+    // 4. Atomic: entity UPDATE + history INSERT commit/rollback together
+    const saved = await this.txRunner.runInTransaction(async (tx) => {
+      const persisted = await this.contratacionRepo.save(contratacion, tx);
+      await this.stateMachine.transitionTo(
+        persisted.id,
+        ContratacionEstado.CANCELADA,
+        tx,
+      );
+      return persisted;
+    });
 
     this.logger.log(`CONTRATACION_CANCELLED id=${saved.id}`);
 

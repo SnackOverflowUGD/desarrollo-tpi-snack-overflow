@@ -1,3 +1,4 @@
+import { type TxContext } from '../../persistence/ports/transaction-runner.port.js';
 import { Contratacion } from '../domain/contratacion.entity.js';
 import { ContratacionEstado } from '../domain/contratacion-estado.enum.js';
 
@@ -18,7 +19,7 @@ export interface ContratacionFiltro {
 }
 
 export interface IContratacionRepository {
-  save(contratacion: Contratacion): Promise<Contratacion>;
+  save(contratacion: Contratacion, tx?: TxContext): Promise<Contratacion>;
   findById(id: string): Promise<Contratacion | null>;
   findByParticipante(filtro: ContratacionFiltro): Promise<Contratacion[]>;
 }

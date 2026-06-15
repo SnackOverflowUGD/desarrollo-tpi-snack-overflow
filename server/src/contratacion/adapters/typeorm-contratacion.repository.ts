@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
+import { type TxContext } from '../../persistence/ports/transaction-runner.port.js';
 import { Contratacion } from '../domain/contratacion.entity.js';
 import type {
   ContratacionFiltro,
@@ -14,8 +15,13 @@ export class TypeOrmContratacionRepository implements IContratacionRepository {
     private readonly repo: Repository<Contratacion>,
   ) {}
 
-  async save(contratacion: Contratacion): Promise<Contratacion> {
-    return this.repo.save(contratacion);
+  async save(
+    contratacion: Contratacion,
+    tx?: TxContext,
+  ): Promise<Contratacion> {
+    const manager: EntityManager =
+      (tx as unknown as EntityManager) ?? this.repo.manager;
+    return manager.save(Contratacion, contratacion);
   }
 
   async findById(id: string): Promise<Contratacion | null> {
