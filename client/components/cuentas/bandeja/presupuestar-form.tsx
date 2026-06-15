@@ -65,6 +65,7 @@ export function PresupuestarForm({
     control,
     setError,
     setFocus,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalSchema),
@@ -166,16 +167,27 @@ export function PresupuestarForm({
         error={errors.fecha?.message}
       >
         {({ id, describedBy, invalid }) => (
-          <Input
-            id={id}
-            type="date"
-            min={minFecha}
-            aria-required="true"
-            aria-invalid={invalid}
-            aria-describedby={describedBy}
-            disabled={busy || succeeded}
-            {...register("fecha")}
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              id={id}
+              type="date"
+              min={minFecha}
+              aria-required="true"
+              aria-invalid={invalid}
+              aria-describedby={describedBy}
+              disabled={busy || succeeded}
+              {...register("fecha")}
+            />
+            {watch("fecha") && (
+              <p className="text-xs text-muted-foreground">
+                {new Date(watch("fecha") + "T12:00:00").toLocaleDateString("es-AR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                })}
+              </p>
+            )}
+          </div>
         )}
       </Field>
 
