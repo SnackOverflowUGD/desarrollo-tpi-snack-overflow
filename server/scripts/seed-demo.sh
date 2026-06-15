@@ -163,9 +163,32 @@ transition() {
   fi
 }
 
-# Build the Argentina-wide coverage polygon JSON for a given localidad.
+# Build a per-locality coverage polygon (~33 km box) centred on the provider's city.
+# Using a city-specific polygon ensures each provider gets a distinct centroid so that
+# distance ranking works correctly in UAT (UAT-01: Posadas must rank before San Vicente).
+# Coordinate order: [lng, lat] — GeoJSON standard (ring closed with 5th = 1st point).
+# LC_ALL=C ensures awk uses '.' as decimal separator regardless of system locale.
 zona_cobertura() {
-  printf '{"geometry":{"type":"Polygon","coordinates":[[[-74,-56],[-53,-56],[-53,-21],[-74,-21],[-74,-56]]]},"localidad":"%s"}' "$1"
+  local loc="$1"
+  local lat lng
+  case "$loc" in
+    Posadas)   lat=-27.3671; lng=-55.8969 ;;
+    Garupá)    lat=-27.4833; lng=-55.8333 ;;
+    Oberá)     lat=-27.4833; lng=-55.1167 ;;
+    Eldorado)  lat=-26.4000; lng=-54.6167 ;;
+    *)         lat=-27.3671; lng=-55.8969 ;;  # default: Posadas
+  esac
+  # 0.3° ≈ 33 km — enough to be city-specific but not overlap neighbouring cities
+  LC_ALL=C awk -v lat="$lat" -v lng="$lng" -v loc="$loc" 'BEGIN {
+    d = 0.3
+    printf "{\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[%.4f,%.4f],[%.4f,%.4f],[%.4f,%.4f],[%.4f,%.4f],[%.4f,%.4f]]]},\"localidad\":\"%s\"}\n",
+      lng-d, lat-d,
+      lng+d, lat-d,
+      lng+d, lat+d,
+      lng-d, lat+d,
+      lng-d, lat-d,
+      loc
+  }'
 }
 
 # fecha for solicitudes: a few days out (create validates fecha >= today).

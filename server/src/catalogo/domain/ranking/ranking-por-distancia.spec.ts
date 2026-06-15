@@ -65,4 +65,23 @@ describe('RankingPorDistanciaStrategy', () => {
     const result = await strategy.rank(prestadores, context);
     expect(result).toHaveLength(2);
   });
+
+  it('UAT-01 regression: Posadas prestador ranks before San Vicente prestador when client is in Posadas', async () => {
+    const posadas = { lat: -27.375, lng: -55.9 }; // Posadas centroid
+    const sanVicente = { lat: -26.0, lng: -56.6 }; // San Vicente centroid
+    const clientPosadas = { lat: -27.37, lng: -55.89 }; // client in Posadas
+
+    const prestadores = [
+      { ...makeResumen(sanVicente), id: 'san-vicente' },
+      { ...makeResumen(posadas), id: 'posadas' },
+    ];
+    const context: RankingContext = {
+      ubicacionCliente: clientPosadas,
+      fechaConsulta: new Date(),
+    };
+
+    const result = await strategy.rank(prestadores, context);
+    // Posadas is ~1km from client, San Vicente is ~167km — closest must be first
+    expect(result[0].id).toBe('posadas');
+  });
 });

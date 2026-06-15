@@ -30,6 +30,8 @@ import type { IUserRepository } from '../ports/user.repository.port.js';
 function makeUser(overrides: Partial<User> = {}): User {
   return {
     id: 'user-uuid-1',
+    name: 'Demo',
+    lastName: 'User',
     email: 'user@example.com',
     passwordHash: 'PLACEHOLDER', // replaced by real hash in tests that need it
     role: UserRole.CLIENTE,
@@ -182,6 +184,30 @@ describe('AuthService.login()', () => {
       unknown
     >;
     expect(signArg).not.toHaveProperty('providerStatus');
+  });
+
+  // UAT-06: JWT payload includes name and email claims
+  it('UAT-06: login success → JWT payload includes name and email claims', async () => {
+    const { service, userRepo, attemptStore, jwtService } = makeMocks();
+    const hash = await argon2.hash('secret');
+    const user = makeUser({
+      name: 'Camila',
+      email: 'camila@example.com',
+      passwordHash: hash,
+    });
+    userRepo.findByEmail.mockResolvedValue(user);
+    attemptStore.isLocked.mockResolvedValue(false);
+
+    await service.login('camila@example.com', 'secret');
+
+    expect(jwtService.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sub: user.id,
+        role: user.role,
+        name: 'Camila',
+        email: 'camila@example.com',
+      }),
+    );
   });
 
   // ESC-03: credenciales inválidas N<4

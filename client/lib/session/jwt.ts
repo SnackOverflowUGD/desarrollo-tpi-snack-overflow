@@ -15,6 +15,7 @@ export interface JwtClaims {
   exp?: number; // seconds since epoch (RFC 7519)
   email?: string;
   role?: string;
+  name?: string;
 }
 
 function base64UrlDecode(segment: string): string | null {
@@ -25,11 +26,17 @@ function base64UrlDecode(segment: string): string | null {
     "=",
   );
   try {
-    if (typeof atob === "function") {
-      return atob(padded);
+    // Node path: Buffer handles UTF-8 correctly.
+    if (typeof Buffer !== "undefined") {
+      return Buffer.from(padded, "base64").toString("utf8");
     }
-    // Node fallback (server-only paths).
-    return Buffer.from(padded, "base64").toString("binary");
+    // Edge runtime: decode via Uint8Array + TextDecoder to preserve UTF-8.
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
   } catch {
     return null;
   }
@@ -51,11 +58,12 @@ export function decodeJwtClaims(token: string): JwtClaims | null {
     const payload = JSON.parse(json) as unknown;
     if (typeof payload !== "object" || payload === null) return null;
 
-    const { exp, email, role } = payload as Record<string, unknown>;
+    const { exp, email, role, name } = payload as Record<string, unknown>;
     return {
       exp: typeof exp === "number" ? exp : undefined,
       email: typeof email === "string" ? email : undefined,
       role: typeof role === "string" ? role : undefined,
+      name: typeof name === "string" ? name : undefined,
     };
   } catch {
     return null;

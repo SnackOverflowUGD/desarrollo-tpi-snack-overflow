@@ -106,6 +106,8 @@ export class AuthService {
     const claims: Record<string, unknown> = {
       sub: user.id,
       role: user.role,
+      name: user.name,
+      email: user.email,
     };
 
     if (user.role === UserRole.PRESTADOR && user.providerStatus !== null) {

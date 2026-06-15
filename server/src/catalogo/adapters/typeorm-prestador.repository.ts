@@ -79,16 +79,26 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
   }
 
   private toResumen(p: Prestador): PrestadorResumen {
+    const franjasCount =
+      p.disponibilidadResumen?.franjasDisponiblesProximos7Dias;
+    const rawEstado = p.disponibilidadResumen?.estado ?? null;
+    // Guard against stale snapshots: a provider tagged disponible_esta_semana
+    // but with zero (or missing) slots is effectively sin_disponibilidad.
+    const disponibilidad =
+      rawEstado === 'disponible_esta_semana' &&
+      (!franjasCount || franjasCount === 0)
+        ? 'sin_disponibilidad'
+        : rawEstado;
+
     return {
       id: p.id,
       nombreCompleto: p.nombreCompleto,
       oficios: p.oficios ?? [],
       calificacionPromedio: Number(p.calificacionPromedio),
       cantidadResenas: p.cantidadResenas,
-      disponibilidad: p.disponibilidadResumen?.estado ?? null,
+      disponibilidad,
       proximaFechaDisponible: p.disponibilidadResumen?.proximaFecha,
-      franjasDisponiblesProximos7Dias:
-        p.disponibilidadResumen?.franjasDisponiblesProximos7Dias,
+      franjasDisponiblesProximos7Dias: franjasCount,
       centroCobertura: p.getCentroCobertura() ?? undefined,
     };
   }

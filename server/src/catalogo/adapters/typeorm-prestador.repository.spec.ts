@@ -206,3 +206,122 @@ describe('TypeOrmPrestadorRepository.findByIdWithProfile()', () => {
     expect(await repo.findByIdWithProfile('missing')).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// UAT-02 — disponibilidad stale-snapshot guard
+// ---------------------------------------------------------------------------
+
+describe('TypeOrmPrestadorRepository.toResumen() — disponibilidad mapping', () => {
+  it('UAT-02: downgrades disponible_esta_semana to sin_disponibilidad when franjasDisponiblesProximos7Dias is 0', async () => {
+    const p = makePrestador('p-stale-0', zonaCuadrada());
+    p.disponibilidadResumen = {
+      estado: 'disponible_esta_semana',
+      franjasDisponiblesProximos7Dias: 0,
+    };
+    const { repo } = makeRepo([p]);
+
+    const result = await repo.findByCobertura({ ...CRITERIA, pageSize: 10 });
+
+    expect(result.data[0].disponibilidad).toBe('sin_disponibilidad');
+  });
+
+  it('UAT-02: downgrades disponible_esta_semana to sin_disponibilidad when franjasDisponiblesProximos7Dias is undefined', async () => {
+    const p = makePrestador('p-stale-undef', zonaCuadrada());
+    p.disponibilidadResumen = {
+      estado: 'disponible_esta_semana',
+      franjasDisponiblesProximos7Dias: undefined,
+    };
+    const { repo } = makeRepo([p]);
+
+    const result = await repo.findByCobertura({ ...CRITERIA, pageSize: 10 });
+
+    expect(result.data[0].disponibilidad).toBe('sin_disponibilidad');
+  });
+
+  it('keeps disponible_esta_semana when franjasDisponiblesProximos7Dias is > 0', async () => {
+    const p = makePrestador('p-available', zonaCuadrada());
+    p.disponibilidadResumen = {
+      estado: 'disponible_esta_semana',
+      franjasDisponiblesProximos7Dias: 3,
+    };
+    const { repo } = makeRepo([p]);
+
+    const result = await repo.findByCobertura({ ...CRITERIA, pageSize: 10 });
+
+    expect(result.data[0].disponibilidad).toBe('disponible_esta_semana');
+  });
+
+  it('passes through proxima_disponible and sin_disponibilidad unchanged', async () => {
+    const pProxima = makePrestador('p-proxima', zonaCuadrada());
+    pProxima.disponibilidadResumen = {
+      estado: 'proxima_disponible',
+      proximaFecha: '2026-06-20',
+    };
+    const pSin = makePrestador('p-sin', zonaCuadrada());
+    pSin.disponibilidadResumen = { estado: 'sin_disponibilidad' };
+
+    const { repo: repoProxima } = makeRepo([pProxima]);
+    const { repo: repoSin } = makeRepo([pSin]);
+
+    const resultProxima = await repoProxima.findByCobertura({
+      ...CRITERIA,
+      pageSize: 10,
+    });
+    const resultSin = await repoSin.findByCobertura({
+      ...CRITERIA,
+      pageSize: 10,
+    });
+
+    expect(resultProxima.data[0].disponibilidad).toBe('proxima_disponible');
+    expect(resultSin.data[0].disponibilidad).toBe('sin_disponibilidad');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UAT-01 — centroCobertura population from zonaCobertura
+// ---------------------------------------------------------------------------
+
+/**
+ * Zone A: [-1,-1]..[1,1] — centroid at (0,0). Already covers origin.
+ * Zone B: [-1,-1]..[10,1] — centroid at lng≈4.5, lat≈0. Also covers origin.
+ */
+function zonaAncha(): ReturnType<CoberturaZona['toJSON']> {
+  return new CoberturaZona(
+    {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [-1, -1],
+          [10, -1],
+          [10, 1],
+          [-1, 1],
+          [-1, -1],
+        ],
+      ],
+    },
+    'Ancha',
+  ).toJSON();
+}
+
+describe('TypeOrmPrestadorRepository.toResumen() — centroCobertura population', () => {
+  it('UAT-01: centroCobertura is populated from zonaCobertura centroid for distance ranking', async () => {
+    // Zone A covers origin (0,0) with centroid near (0,0)
+    const pNear = makePrestador('near', zonaCuadrada());
+    // Zone B also covers origin (0,0) but centroid is far to the right (~4.5,0)
+    const pFar = makePrestador('far', zonaAncha());
+
+    const { repo } = makeRepo([pNear, pFar]);
+    const result = await repo.findByCobertura({ ...CRITERIA, pageSize: 2 });
+
+    expect(result.data).toHaveLength(2);
+
+    // centroCobertura must be populated — not null/undefined
+    expect(result.data[0].centroCobertura).toBeDefined();
+    expect(result.data[1].centroCobertura).toBeDefined();
+
+    // The near provider's centroid should be close to (0,0)
+    const near = result.data.find((r) => r.id === 'near')!;
+    expect(near.centroCobertura!.lat).toBeCloseTo(0, 1);
+    expect(near.centroCobertura!.lng).toBeCloseTo(0, 1);
+  });
+});

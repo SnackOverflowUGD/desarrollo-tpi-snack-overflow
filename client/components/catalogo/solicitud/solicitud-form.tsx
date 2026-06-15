@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 import { Field } from "@/components/ui/field";
+import { DateInput } from "@/components/ui/date-input";
 import {
   Select,
   SelectContent,
@@ -168,15 +169,22 @@ export function SolicitudForm({ prestadorId }: { prestadorId: string }) {
         error={errors.fecha?.message}
       >
         {({ id, describedBy, invalid }) => (
-          <Input
-            id={id}
-            type="date"
-            min={minFecha}
-            aria-required="true"
-            aria-invalid={invalid}
-            aria-describedby={describedBy}
-            disabled={busy}
-            {...register("fecha")}
+          <Controller
+            name="fecha"
+            control={control}
+            render={({ field }) => (
+              <DateInput
+                id={id}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                disabled={busy}
+                min={minFecha}
+                aria-required="true"
+                aria-invalid={invalid}
+                aria-describedby={describedBy}
+              />
+            )}
           />
         )}
       </Field>

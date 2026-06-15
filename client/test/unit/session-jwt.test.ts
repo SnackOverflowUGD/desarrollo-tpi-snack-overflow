@@ -14,7 +14,18 @@ describe("decodeJwtClaims", () => {
   it("reads exp/email/role from a well-formed token", () => {
     const token = makeJwt({ exp: 1234567890, email: "u@x.com", role: "cliente" });
     const claims = decodeJwtClaims(token);
-    expect(claims).toEqual({ exp: 1234567890, email: "u@x.com", role: "cliente" });
+    expect(claims).toEqual({ exp: 1234567890, email: "u@x.com", role: "cliente", name: undefined });
+  });
+
+  it("reads name when present in the JWT payload", () => {
+    const token = makeJwt({ exp: 1234567890, email: "u@x.com", role: "cliente", name: "Ana García" });
+    const claims = decodeJwtClaims(token);
+    expect(claims).toEqual({ exp: 1234567890, email: "u@x.com", role: "cliente", name: "Ana García" });
+  });
+
+  it("omits name when payload carries a non-string name", () => {
+    const token = makeJwt({ name: 42 });
+    expect(decodeJwtClaims(token)?.name).toBeUndefined();
   });
 
   it("returns null for a malformed (non-3-segment) token", () => {
@@ -28,7 +39,7 @@ describe("decodeJwtClaims", () => {
 
   it("omits non-string/non-number claims", () => {
     const token = makeJwt({ exp: "soon", email: 42 });
-    expect(decodeJwtClaims(token)).toEqual({ exp: undefined, email: undefined, role: undefined });
+    expect(decodeJwtClaims(token)).toEqual({ exp: undefined, email: undefined, role: undefined, name: undefined });
   });
 });
 

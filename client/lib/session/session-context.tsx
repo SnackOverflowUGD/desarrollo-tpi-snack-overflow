@@ -16,6 +16,7 @@ import * as React from "react";
 export interface SessionUser {
   email?: string;
   role?: string;
+  name?: string;
 }
 
 export type SessionStatus = "authenticated" | "anonymous";
