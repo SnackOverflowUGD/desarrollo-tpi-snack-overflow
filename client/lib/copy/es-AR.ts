@@ -506,6 +506,9 @@ export const copy = {
     fechaLabel: "Fecha",
     franjaLabel: "Franja",
     precioLabel: "Precio estimado",
+    fechaPropuestaLabel: "Fecha propuesta",
+    franjaPropuestaLabel: "Franja propuesta",
+    justificacionLabel: "Justificación del precio",
 
     // Filter (REQ-05 — activas vs. terminadas).
     filtroLabel: "Filtrar por estado",
