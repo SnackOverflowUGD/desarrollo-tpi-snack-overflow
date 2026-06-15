@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
 
+ARG BACKEND_URL=http://localhost:3000
+
 # --- build stage -------------------------------------------------------------
 FROM node:20-alpine AS builder
-WORKDIR /app
+ARG BACKEND_URL
+ENV BACKEND_URL=${BACKEND_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
+WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci

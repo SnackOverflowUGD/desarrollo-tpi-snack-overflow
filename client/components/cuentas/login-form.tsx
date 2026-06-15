@@ -69,12 +69,16 @@ export function LoginForm({ next }: { next?: string }) {
     });
 
     if (result.ok) {
-      // Session is set (cookie). Hard-navigate so the server re-renders the
-      // full page with the cookie in the request — router.push() can serve
-      // stale RSC layout data (cached before login) that keeps the navbar
-      // anonymous even though the server-side payload is correct.
+      // Session is set (cookie). We must delay the navigation just enough for
+      // the browser to commit the Set-Cookie to the cookie jar — navigating
+      // immediately can lose the cookie because fetch() resolves before the
+      // browser's cookie service finishes processing the response headers.
+      // Once committed, a full page load ensures the server renders the
+      // authenticated navbar (router.push() would serve stale RSC layout data
+      // cached before login).
       setSubmitted(true);
       refresh();
+      await new Promise((r) => setTimeout(r, 80));
       window.location.href = safeRedirectTarget(next);
       return;
     }
