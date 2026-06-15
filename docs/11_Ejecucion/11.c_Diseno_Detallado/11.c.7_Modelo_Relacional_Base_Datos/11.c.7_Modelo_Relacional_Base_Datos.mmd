@@ -1,0 +1,155 @@
+erDiagram
+    Usuario {
+        uuid id PK
+        varchar nombre
+        varchar apellido
+        varchar email
+        varchar password_hash
+        varchar telefono
+        varchar rol
+        varchar estado
+        int intentos_fallidos
+        timestamp bloqueado_hasta
+        timestamp fecha_registro
+    }
+    
+    Prestador {
+        uuid id PK
+        varchar descripcion
+        text zonas_cobertura
+        varchar estado_verificacion
+        timestamp fecha_verificacion
+        uuid id_admin_verificador FK
+    }
+
+    Categoria_Oficio {
+        uuid id PK
+        varchar nombre_categoria
+        text descripcion
+    }
+    
+    Oficio {
+        uuid id PK
+        uuid id_categoria FK
+        varchar nombre_oficio
+        boolean requiere_matricula
+    }
+    
+    Servicio_Publicado {
+        uuid id PK
+        uuid id_prestador FK
+        uuid id_oficio FK
+        varchar titulo
+        text descripcion
+        decimal precio_base_estimado
+        boolean activo
+    }
+    
+    Disponibilidad_Recurrente {
+        uuid id PK
+        uuid id_prestador FK
+        int dia_semana
+        varchar hora_inicio
+        varchar hora_fin
+        boolean disponible
+    }
+    
+    Excepcion_Agenda {
+        uuid id PK
+        uuid id_prestador FK
+        date fecha
+    }
+    
+    Organismo_Regulador {
+        uuid id PK
+        varchar razon_social
+        varchar region
+    }
+    
+    Habilitacion_Profesional {
+        uuid id PK
+        uuid id_prestador FK
+        uuid id_oficio FK
+        uuid id_organismo_regulador FK
+        varchar matricula
+        blob documento
+        varchar estado_matricula
+    }
+    
+    Contratacion {
+        uuid id PK
+        uuid id_cliente FK
+        uuid id_servicio FK
+        text descripcion_problema
+        varchar direccion_servicio
+        varchar localidad
+        date fecha_servicio
+        varchar franja_horaria_inicio
+        varchar franja_horaria_fin
+        decimal precio_acordado
+        varchar estado_contratacion
+        timestamp fecha_creacion
+        timestamp fecha_actualizacion
+    }
+    
+    Estado_Contratacion {
+        uuid id PK
+        uuid id_contratacion FK
+        uuid cambiado_por_usuario_id FK
+        varchar estado_anterior
+        varchar estado_nuevo
+        timestamp fecha_cambio
+        text motivo
+    }
+    
+    Mensaje_Chat {
+        uuid id PK
+        uuid id_contratacion FK
+        uuid id_emisor FK
+        text contenido
+        timestamp fecha_envio
+        boolean leido
+    }
+    
+    Pago {
+        uuid id PK
+        uuid id_contratacion FK
+        varchar id_transaccion_externa
+        decimal monto
+        varchar estado_pago
+        timestamp fecha_pago
+        timestamp fecha_liberacion
+    }
+    
+    Reseña {
+        uuid id PK
+        uuid id_contratacion FK
+        uuid id_admin_moderador FK
+        int calificacion
+        text comentario_cliente
+        timestamp fecha_reseña
+        text respuesta_prestador
+        timestamp fecha_respuesta
+        varchar estado_moderacion
+    }
+
+
+    Usuario ||--o| Prestador : "es un"
+    Usuario ||--o{ Estado_Contratacion : "audita"
+    Usuario ||--o{ Mensaje_Chat : "envia"
+    Usuario ||--o{ Reseña : "modera"
+    Prestador }o--|| Usuario : "verificado por"
+    Categoria_Oficio ||--o{ Oficio : "clasifica"
+    Oficio ||--o{ Habilitacion_Profesional : "requiere"
+    Oficio ||--o{ Servicio_Publicado : "corresponde"
+    Prestador ||--o{ Servicio_Publicado : "publica"
+    Prestador ||--o{ Disponibilidad_Recurrente : "configura"
+    Prestador ||--o{ Excepcion_Agenda : "configura"
+    Prestador ||--o{ Habilitacion_Profesional : "posee"
+    Usuario ||--o{ Contratacion : "solicita"
+    Servicio_Publicado ||--o{ Contratacion : "genera"
+    Contratacion ||--o{ Estado_Contratacion : "registra"
+    Contratacion ||--o{ Mensaje_Chat : "contiene"
+    Contratacion ||--o| Pago : "abona"
+    Contratacion ||--o| Reseña : "recibe"
+    Organismo_Regulador ||--o{ Habilitacion_Profesional : "habilita"
