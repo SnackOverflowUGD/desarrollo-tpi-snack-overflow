@@ -134,7 +134,22 @@ rows AS (
     CASE WHEN r_new < 0.10 THEN 0
          WHEN r_rev < 0.70 THEN floor(r_rev * 50)::int
          ELSE floor(50 + r_rev * 350)::int END                                                       AS resenas,
-    r_avail
+    r_avail,
+    -- Real coordinates per Misiones city → distinct coverage centroid per locality,
+    -- so "ordenar por distancia" ranks correctly (previously every row shared the
+    -- same Argentina-wide polygon → identical centroids → distance ties → wrong order).
+    CASE localidad
+      WHEN 'Posadas' THEN -27.3671 WHEN 'Oberá' THEN -27.4878 WHEN 'Eldorado' THEN -26.4000
+      WHEN 'Garupá' THEN -27.4833 WHEN 'Puerto Iguazú' THEN -25.5972 WHEN 'Apóstoles' THEN -27.9119
+      WHEN 'Leandro N. Alem' THEN -27.6019 WHEN 'Montecarlo' THEN -26.5667 WHEN 'Puerto Rico' THEN -26.8000
+      WHEN 'Jardín América' THEN -27.0333 WHEN 'San Vicente' THEN -26.9939 WHEN 'Aristóbulo del Valle' THEN -27.0950
+      WHEN 'Wanda' THEN -25.9667 WHEN 'Candelaria' THEN -27.4667 ELSE -27.3671 END                   AS lat,
+    CASE localidad
+      WHEN 'Posadas' THEN -55.8969 WHEN 'Oberá' THEN -55.1199 WHEN 'Eldorado' THEN -54.6167
+      WHEN 'Garupá' THEN -55.8333 WHEN 'Puerto Iguazú' THEN -54.5786 WHEN 'Apóstoles' THEN -55.7561
+      WHEN 'Leandro N. Alem' THEN -55.3253 WHEN 'Montecarlo' THEN -54.7667 WHEN 'Puerto Rico' THEN -55.0333
+      WHEN 'Jardín América' THEN -55.2333 WHEN 'San Vicente' THEN -54.4878 WHEN 'Aristóbulo del Valle' THEN -54.8978
+      WHEN 'Wanda' THEN -54.5667 WHEN 'Candelaria' THEN -55.7500 ELSE -55.8969 END                   AS lng
   FROM gen
 ),
 ins_prestadores AS (
@@ -155,10 +170,12 @@ ins_prestadores AS (
     jsonb_build_object(
       'geometry', jsonb_build_object(
         'type', 'Polygon',
+        -- Box centred on the locality (±2.5° ≈ wide enough to cover all of Misiones
+        -- for high recall, while the centroid stays at the city → correct distance order).
         'coordinates', jsonb_build_array(jsonb_build_array(
-          jsonb_build_array(-74,-56), jsonb_build_array(-53,-56),
-          jsonb_build_array(-53,-21), jsonb_build_array(-74,-21),
-          jsonb_build_array(-74,-56)))),
+          jsonb_build_array(lng-2.5, lat-2.5), jsonb_build_array(lng+2.5, lat-2.5),
+          jsonb_build_array(lng+2.5, lat+2.5), jsonb_build_array(lng-2.5, lat+2.5),
+          jsonb_build_array(lng-2.5, lat-2.5)))),
       'localidad', localidad
     ),
     localidad,
