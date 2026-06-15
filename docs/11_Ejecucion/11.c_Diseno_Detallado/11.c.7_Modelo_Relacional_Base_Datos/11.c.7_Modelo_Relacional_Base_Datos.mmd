@@ -16,7 +16,7 @@ erDiagram
     Prestador {
         uuid id PK
         varchar descripcion
-        text zonas_cobertura
+        varchar zonas_cobertura
         varchar estado_verificacion
         timestamp fecha_verificacion
         uuid id_admin_verificador FK
@@ -25,7 +25,7 @@ erDiagram
     Categoria_Oficio {
         uuid id PK
         varchar nombre_categoria
-        text descripcion
+        varchar descripcion
     }
     
     Oficio {
@@ -40,7 +40,7 @@ erDiagram
         uuid id_prestador FK
         uuid id_oficio FK
         varchar titulo
-        text descripcion
+        varchar descripcion
         decimal precio_base_estimado
         boolean activo
     }
@@ -80,7 +80,7 @@ erDiagram
         uuid id PK
         uuid id_cliente FK
         uuid id_servicio FK
-        text descripcion_problema
+        varchar descripcion_problema
         varchar direccion_servicio
         varchar localidad
         date fecha_servicio
@@ -99,14 +99,14 @@ erDiagram
         varchar estado_anterior
         varchar estado_nuevo
         timestamp fecha_cambio
-        text motivo
+        varchar motivo
     }
     
     Mensaje_Chat {
         uuid id PK
         uuid id_contratacion FK
         uuid id_emisor FK
-        text contenido
+        varchar contenido
         timestamp fecha_envio
         boolean leido
     }
@@ -126,9 +126,9 @@ erDiagram
         uuid id_contratacion FK
         uuid id_admin_moderador FK
         int calificacion
-        text comentario_cliente
+        varchar comentario_cliente
         timestamp fecha_reseña
-        text respuesta_prestador
+        varchar respuesta_prestador
         timestamp fecha_respuesta
         varchar estado_moderacion
     }
