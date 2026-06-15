@@ -83,6 +83,6 @@ export async function getInitialSession(): Promise<SessionState> {
   const claims = decodeJwtClaims(token);
   return {
     status: "authenticated",
-    user: { email: claims?.email, role: claims?.role },
+    user: { email: claims?.email, role: claims?.role, name: claims?.name },
   };
 }

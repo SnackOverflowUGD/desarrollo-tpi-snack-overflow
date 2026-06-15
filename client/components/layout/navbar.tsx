@@ -88,10 +88,13 @@ export function Navbar() {
                 />
                 {roleLabel}
               </span>
-              {session.user?.email && (
-                <span className="max-w-[16ch] truncate">
-                  {session.user.email}
-                </span>
+              {(session.user?.name ?? session.user?.email) && (
+                <Link
+                  href="/cuenta"
+                  className="max-w-[16ch] truncate hover:underline underline-offset-4"
+                >
+                  {session.user.name ?? session.user.email}
+                </Link>
               )}
             </span>
           )}
@@ -131,7 +134,9 @@ export function Navbar() {
         {isAuthenticated && (
           <p className="px-2 text-sm text-muted-foreground" data-testid="nav-account-mobile">
             <span className="font-medium text-foreground">{roleLabel}</span>
-            {session.user?.email ? ` · ${session.user.email}` : ""}
+            {(session.user?.name ?? session.user?.email)
+              ? ` · ${session.user.name ?? session.user.email}`
+              : ""}
           </p>
         )}
         {links.map((link) => (

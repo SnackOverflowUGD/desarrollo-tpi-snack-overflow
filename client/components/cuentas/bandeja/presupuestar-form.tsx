@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 import { Field } from "@/components/ui/field";
 import { toast } from "@/components/ui/toaster";
+import { DateInput } from "@/components/ui/date-input";
 import {
   Select,
   SelectContent,
@@ -166,15 +167,22 @@ export function PresupuestarForm({
         error={errors.fecha?.message}
       >
         {({ id, describedBy, invalid }) => (
-          <Input
-            id={id}
-            type="date"
-            min={minFecha}
-            aria-required="true"
-            aria-invalid={invalid}
-            aria-describedby={describedBy}
-            disabled={busy || succeeded}
-            {...register("fecha")}
+          <Controller
+            name="fecha"
+            control={control}
+            render={({ field }) => (
+              <DateInput
+                id={id}
+                value={field.value ?? ""}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                disabled={busy || succeeded}
+                min={minFecha}
+                aria-required="true"
+                aria-invalid={invalid}
+                aria-describedby={describedBy}
+              />
+            )}
           />
         )}
       </Field>

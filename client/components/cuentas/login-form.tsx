@@ -74,8 +74,8 @@ export function LoginForm({ next }: { next?: string }) {
       // Session is set (cookie). Re-hydrate the client session, then redirect.
       setSubmitted(true);
       refresh();
-      router.push(safeRedirectTarget(next));
       router.refresh();
+      router.push(safeRedirectTarget(next));
       return;
     }
 
