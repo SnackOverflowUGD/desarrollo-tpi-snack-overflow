@@ -57,6 +57,15 @@ PRESTADORES=(
   "cerrajero|prestador.cerrajero|Sofía|Acuña|cerrajero|Cerrajero|Posadas|4.8|Aperturas, cambio de cerraduras y duplicado de llaves 24hs."
 )
 
+# Localidad -> "lat,lng" coordinates for 50km coverage circle generation.
+declare -A LOCALIDAD_COORDS=(
+  ["Posadas"]="-27.367,-55.896"
+  ["Oberá"]="-27.487,-55.120"
+  ["Eldorado"]="-26.408,-54.632"
+  ["Garupá"]="-27.483,-55.833"
+  ["San Vicente"]="-26.867,-54.667"
+)
+
 psql() {
   docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A "$@"
 }
@@ -163,9 +172,17 @@ transition() {
   fi
 }
 
-# Build the Argentina-wide coverage polygon JSON for a given localidad.
+# Build the 50km coverage circle polygon JSON for a given localidad using seed-cobertura.js.
 zona_cobertura() {
-  printf '{"geometry":{"type":"Polygon","coordinates":[[[-74,-56],[-53,-56],[-53,-21],[-74,-21],[-74,-56]]]},"localidad":"%s"}' "$1"
+  local localidad="$1"
+  local coords="${LOCALIDAD_COORDS[$localidad]}"
+  if [[ -z "$coords" ]]; then
+    echo "!! Unknown localidad: $localidad" >&2
+    exit 1
+  fi
+  local lat="${coords%,*}"
+  local lng="${coords#*,}"
+  node "$(dirname "$0")/seed-cobertura.js" "$lat" "$lng" 50 "$localidad"
 }
 
 # fecha for solicitudes: a few days out (create validates fecha >= today).
