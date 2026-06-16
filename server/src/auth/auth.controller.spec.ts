@@ -9,6 +9,7 @@ import { HttpStatus, ValidationPipe } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
+import { DataSource } from 'typeorm';
 import supertest from 'supertest';
 import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
@@ -32,6 +33,10 @@ import type { IEmailNotifier } from './ports/email-notifier.port.js';
 import type { IRegulatedTradeRepository } from './ports/regulated-trade.repository.port.js';
 import type { ITokenStore } from './ports/token-store.port.js';
 import type { IUserRepository } from './ports/user.repository.port.js';
+import {
+  PRESTADOR_REPOSITORY,
+  type IPrestadorRepository,
+} from './ports/prestador-repository.port.js';
 
 // ---------------------------------------------------------------------------
 // In-memory fake adapters (no infra required)
@@ -209,12 +214,39 @@ interface TestApp {
   module: TestingModule;
 }
 
+class FakePrestadorRepo implements IPrestadorRepository {
+  async create(data: any): Promise<any> {
+    return { id: data.id };
+  }
+  async findByCriteria(): Promise<any> {
+    return { rows: [], total: 0 };
+  }
+  async findById(): Promise<any> {
+    return null;
+  }
+}
+
 async function buildApp(): Promise<TestApp> {
   const userRepo = new FakeUserRepo();
   const attemptStore = new FakeAttemptStore();
   const tokenStore = new FakeTokenStore();
   const emailNotifier = new FakeEmailNotifier();
   const regulatedTradeRepo = new FakeRegulatedTradeRepo();
+  const prestadorRepo = new FakePrestadorRepo();
+
+  // Mock DataSource so RegistrationService can inject it
+  const mockDataSource = {
+    createQueryRunner: jest.fn().mockReturnValue({
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+      manager: {
+        save: jest.fn(),
+      },
+    }),
+  };
 
   const module = await Test.createTestingModule({
     imports: [
@@ -233,6 +265,8 @@ async function buildApp(): Promise<TestApp> {
       { provide: TOKEN_STORE, useValue: tokenStore },
       { provide: EMAIL_NOTIFIER, useValue: emailNotifier },
       { provide: REGULATED_TRADE_REPOSITORY, useValue: regulatedTradeRepo },
+      { provide: PRESTADOR_REPOSITORY, useValue: prestadorRepo },
+      { provide: DataSource, useValue: mockDataSource },
     ],
   }).compile();
 
@@ -618,6 +652,7 @@ describe('AuthController (API integration)', () => {
           password: 'SecurePass2',
           role: 'prestador',
           trade: 'plomero',
+          localidad: 'Posadas',
         });
 
       expect(res.status).toBe(HttpStatus.CREATED);
@@ -646,6 +681,7 @@ describe('AuthController (API integration)', () => {
           password: 'SecurePass3',
           role: 'prestador',
           trade: 'gasista',
+          localidad: 'Oberá',
         });
 
       expect(res.status).toBe(HttpStatus.CREATED);

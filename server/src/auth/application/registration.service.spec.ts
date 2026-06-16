@@ -18,6 +18,8 @@ import type { User } from '../domain/user.entity.js';
 import type { RegulatedTrade } from '../domain/regulated-trade.entity.js';
 import type { IUserRepository } from '../ports/user.repository.port.js';
 import type { IRegulatedTradeRepository } from '../ports/regulated-trade.repository.port.js';
+import type { IPrestadorRepository } from '../ports/prestador-repository.port.js';
+import { DataSource } from 'typeorm';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,9 +79,33 @@ function makeMocks() {
     findByTradeName: jest.fn(),
   };
 
-  const service = new RegistrationService(userRepo, regulatedTradeRepo);
+  const prestadorRepo: jest.Mocked<IPrestadorRepository> = {
+    findByCriteria: jest.fn(),
+    findById: jest.fn(),
+    create: jest.fn(),
+  };
 
-  return { service, userRepo, regulatedTradeRepo };
+  const mockQueryRunner = {
+    connect: jest.fn(),
+    startTransaction: jest.fn(),
+    commitTransaction: jest.fn(),
+    rollbackTransaction: jest.fn(),
+    release: jest.fn(),
+    manager: { save: jest.fn() },
+  } as any;
+
+  const dataSource = {
+    createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+  } as any;
+
+  const service = new RegistrationService(
+    userRepo,
+    regulatedTradeRepo,
+    prestadorRepo,
+    dataSource,
+  );
+
+  return { service, userRepo, regulatedTradeRepo, prestadorRepo, dataSource, mockQueryRunner };
 }
 
 // ---------------------------------------------------------------------------
@@ -145,6 +171,7 @@ describe('RegistrationService.register()', () => {
     const dto = makeRegisterDto({
       role: RegistrableRole.PRESTADOR,
       trade: 'plomero', // not in regulated list
+      localidad: 'Posadas',
     });
     const result = await service.register(dto);
 
@@ -171,6 +198,7 @@ describe('RegistrationService.register()', () => {
     const dto = makeRegisterDto({
       role: RegistrableRole.PRESTADOR,
       trade: 'gasista', // in regulated list
+      localidad: 'Oberá',
     });
     const result = await service.register(dto);
 
