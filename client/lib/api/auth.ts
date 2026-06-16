@@ -19,6 +19,7 @@ export interface RegisterPayload {
   password: string; // 8..128
   role: Role;
   trade?: string; // present ONLY when role === 'prestador'
+  localidad?: string; // present ONLY when role === 'prestador'
 }
 
 export interface RegisterSuccess {

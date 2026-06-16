@@ -74,6 +74,10 @@ export const copy = {
     tradeHelp: "Elegí el oficio que ofrecés",
     tradePlaceholder: "Seleccioná tu oficio",
 
+    localidadLabel: "Localidad",
+    localidadHelp: "Elegí la localidad donde trabajás",
+    localidadPlaceholder: "Seleccioná tu localidad",
+
     regulatedNotice:
       "Si tu oficio requiere matrícula, tu cuenta quedará pendiente de habilitación hasta que la acredites.",
 
@@ -173,6 +177,7 @@ export const copy = {
     password: "La contraseña debe tener entre 8 y 128 caracteres.",
     role: "Elegí si te registrás como cliente o prestador.",
     trade: "Seleccioná tu oficio.",
+    localidad: "Seleccioná una localidad",
     // Generic required-field message (login: password no aplica longitud mínima).
     required: "Este campo es obligatorio.",
   },
