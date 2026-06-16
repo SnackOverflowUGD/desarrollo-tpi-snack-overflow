@@ -33,10 +33,10 @@ Chain strategy: feature-branch-chain
 
 ## Phase 3: Frontend Integration
 
-- [ ] 3.1 Add `localidad` to zod schema in `registro.ts` (conditional required for prestador)
-- [ ] 3.2 Add `localidad?: string` to `RegisterPayload` in `auth.ts`
-- [ ] 3.3 Add conditional `<Select>` for localidad in `registro-form.tsx` (populated from UBICACIONES)
-- [ ] 3.4 Add localidad copy strings to `es-AR.ts`
+- [x] 3.1 Add `localidad` to zod schema in `registro.ts` (conditional required for prestador)
+- [x] 3.2 Add `localidad?: string` to `RegisterPayload` in `auth.ts`
+- [x] 3.3 Add conditional `<Select>` for localidad in `registro-form.tsx` (populated from UBICACIONES)
+- [x] 3.4 Add localidad copy strings to `es-AR.ts`
 - [ ] 3.5 E2E test: prestador registers with localidad → visible in search
 - [ ] 3.6 E2E test: cliente registration unchanged (no localidad field)
 
