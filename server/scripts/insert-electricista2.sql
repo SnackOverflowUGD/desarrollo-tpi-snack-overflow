@@ -1,0 +1,4 @@
+INSERT INTO prestadores (id, nombre_completo, oficios, categoria, calificacion_promedio, cantidad_resenas, zona_cobertura, localidad, cuenta_activa, tiene_servicios_publicados, visible, disponibilidad_resumen) VALUES 
+('6251264e-365d-4ec8-97aa-a16707d66ea8', 'Carlos Pérez', ARRAY['Electricista'], 'Electricista', 4.5, 8, 
+'{"geometry":{"type":"Polygon","coordinates":[[[-55.833,-27.483],[-55.380,-27.483],[-55.380,-27.030],[-55.833,-27.030],[-55.833,-27.483]]]},"localidad":"Garupá"}'::jsonb, 
+'Garupá', true, true, true, '{"estado":"disponible_esta_semana","franjasDisponiblesProximos7Dias":8}'::jsonb);

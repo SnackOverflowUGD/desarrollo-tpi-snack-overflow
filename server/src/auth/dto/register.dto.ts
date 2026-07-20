@@ -46,4 +46,9 @@ export class RegisterDto {
   @IsString()
   @MaxLength(100)
   trade?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  localidad?: string;
 }

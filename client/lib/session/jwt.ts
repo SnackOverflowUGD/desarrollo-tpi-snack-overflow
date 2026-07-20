@@ -16,6 +16,7 @@ export interface JwtClaims {
   email?: string;
   role?: string;
   name?: string;
+  lastName?: string;
 }
 
 function base64UrlDecode(segment: string): string | null {
@@ -58,12 +59,13 @@ export function decodeJwtClaims(token: string): JwtClaims | null {
     const payload = JSON.parse(json) as unknown;
     if (typeof payload !== "object" || payload === null) return null;
 
-    const { exp, email, role, name } = payload as Record<string, unknown>;
+    const { exp, email, role, name, lastName } = payload as Record<string, unknown>;
     return {
       exp: typeof exp === "number" ? exp : undefined,
       email: typeof email === "string" ? email : undefined,
       role: typeof role === "string" ? role : undefined,
       name: typeof name === "string" ? name : undefined,
+      lastName: typeof lastName === "string" ? lastName : undefined,
     };
   } catch {
     return null;

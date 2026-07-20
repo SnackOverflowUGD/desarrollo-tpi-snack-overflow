@@ -262,6 +262,7 @@ export class ContratacionService {
           fechaPropuesta: c.fechaPropuesta,
           franjaPropuesta: c.franjaPropuesta,
           precioEstimado: c.precioEstimado,
+          justificacionPrecio: c.justificacionPrecio,
           estado: c.estado,
           createdAt: c.createdAt,
         });
@@ -316,6 +317,7 @@ export class ContratacionService {
       fechaPropuesta: contratacion.fechaPropuesta,
       franjaPropuesta: contratacion.franjaPropuesta,
       precioEstimado: contratacion.precioEstimado,
+      justificacionPrecio: contratacion.justificacionPrecio,
       estado: contratacion.estado,
       createdAt: contratacion.createdAt,
       historial: history.map((h) => ({
@@ -379,6 +381,7 @@ export class ContratacionService {
     contratacion.fechaPropuesta = dto.fecha;
     contratacion.franjaPropuesta = dto.franja;
     contratacion.precioEstimado = dto.precioEstimado;
+    contratacion.justificacionPrecio = dto.justificacionPrecio ?? null;
     contratacion.estado = ContratacionEstado.PRESUPUESTADA;
 
     // 7. Atomic: entity UPDATE + history INSERT commit/rollback together
@@ -406,6 +409,7 @@ export class ContratacionService {
       fechaPropuesta: saved.fechaPropuesta,
       franjaPropuesta: saved.franjaPropuesta,
       precioEstimado: saved.precioEstimado,
+      justificacionPrecio: saved.justificacionPrecio,
       estado: saved.estado,
       createdAt: saved.createdAt,
     });
@@ -470,6 +474,7 @@ export class ContratacionService {
       fechaPropuesta: saved.fechaPropuesta,
       franjaPropuesta: saved.franjaPropuesta,
       precioEstimado: saved.precioEstimado,
+      justificacionPrecio: saved.justificacionPrecio,
       estado: saved.estado,
       createdAt: saved.createdAt,
     });
@@ -681,6 +686,7 @@ export class ContratacionService {
       fechaPropuesta: saved.fechaPropuesta,
       franjaPropuesta: saved.franjaPropuesta,
       precioEstimado: saved.precioEstimado,
+      justificacionPrecio: saved.justificacionPrecio,
       estado: saved.estado,
       createdAt: saved.createdAt,
     });

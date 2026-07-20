@@ -50,6 +50,13 @@ export class Contratacion {
   precioEstimado: number | null;
 
   @Column({
+    type: 'text',
+    name: 'justificacion_precio',
+    nullable: true,
+  })
+  justificacionPrecio: string | null;
+
+  @Column({
     type: 'enum',
     enum: ContratacionEstado,
     default: ContratacionEstado.SOLICITADA,

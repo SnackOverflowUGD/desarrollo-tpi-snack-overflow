@@ -75,8 +75,13 @@ export async function POST(request: Request): Promise<Response> {
       return NextResponse.json({ ok: false }, { status: 502 });
     }
 
+    // Determine Secure flag from the request protocol (works behind
+    // Cloudflare tunnel where x-forwarded-proto is set, and over plain
+    // HTTP localhost where it isn't).
+    const forwardedProto = request.headers.get("x-forwarded-proto");
+    const isSecure = forwardedProto === "https";
     // Translate body → httpOnly cookie. The token never reaches the client.
-    await setSessionCookie(data.accessToken);
+    await setSessionCookie(data.accessToken, { secure: isSecure });
     return NextResponse.json({ ok: true }, { status: 200 });
   }
 

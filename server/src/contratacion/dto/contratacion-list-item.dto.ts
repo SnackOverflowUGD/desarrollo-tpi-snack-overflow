@@ -22,6 +22,7 @@ export class ContratacionListItemDto {
   fechaPropuesta?: string | null;
   franjaPropuesta?: string | null;
   precioEstimado?: number | null;
+  justificacionPrecio?: string | null;
   estado: ContratacionEstado;
   createdAt: Date;
 

@@ -46,6 +46,7 @@ export const registroSchema = z
     // '' = not selected; conditionally required below. Defaulted via
     // registroDefaults (kept a plain string so resolver input == output type).
     trade: z.string(),
+    localidad: z.string(),
   })
   .superRefine((data, ctx) => {
     // trade is required only when registering as prestador (REQ-03, ESC-UI-06).
@@ -54,6 +55,14 @@ export const registroSchema = z
         code: "custom",
         path: ["trade"],
         message: copy.fieldErrors.trade,
+      });
+    }
+    // localidad is required only when registering as prestador.
+    if (data.role === "prestador" && data.localidad.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["localidad"],
+        message: copy.fieldErrors.localidad,
       });
     }
   });
@@ -69,4 +78,5 @@ export const registroDefaults: RegistroFormValues = {
   phone: "",
   password: "",
   trade: "",
+  localidad: "",
 };

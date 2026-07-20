@@ -24,6 +24,7 @@ import { toast } from "@/components/ui/toaster";
 
 import { copy } from "@/lib/copy/es-AR";
 import { TRADES, isRegulatedTrade } from "@/lib/trades";
+import { UBICACIONES } from "@/lib/catalogo/ubicaciones";
 import { registerUser, type RegisterPayload } from "@/lib/api/auth";
 import {
   registroSchema,
@@ -68,8 +69,18 @@ export function RegistroForm() {
   const role = watch("role");
   const password = watch("password");
   const trade = watch("trade");
+  const localidad = watch("localidad");
   const isPrestador = role === "prestador";
   const showRegulatedNotice = isPrestador && trade !== "" && isRegulatedTrade(trade);
+
+  // Show all UBICACIONES entries (cities + barrios like "Posadas — Centro").
+  // Barrios use the "Ciudad — Barrio" label; the backend extracts the ciudad for coordinates.
+  const LOCALIDADES = [...UBICACIONES].sort((a, b) => {
+    if (a.ciudad !== b.ciudad) return a.ciudad.localeCompare(b.ciudad);
+    if (a.barrio === null) return -1;
+    if (b.barrio === null) return 1;
+    return a.barrio.localeCompare(b.barrio);
+  });
 
   // Move focus to the global error summary when it appears (§8, REQ-07.3).
   useEffect(() => {
@@ -81,7 +92,7 @@ export function RegistroForm() {
   async function onSubmit(values: RegistroFormValues) {
     setGlobalError(null);
 
-    // Build the payload: omit `trade` entirely for clientes (REQ-03, OCL P3).
+    // Build the payload: omit `trade` and `localidad` entirely for clientes (REQ-03, OCL P3).
     const payload: RegisterPayload = {
       name: values.name.trim(),
       lastName: values.lastName.trim(),
@@ -89,7 +100,9 @@ export function RegistroForm() {
       phone: values.phone.trim(),
       password: values.password,
       role: values.role as RegisterPayload["role"],
-      ...(values.role === "prestador" ? { trade: values.trade } : {}),
+      ...(values.role === "prestador"
+        ? { trade: values.trade, localidad: values.localidad }
+        : {}),
     };
 
     const result = await registerUser(payload);
@@ -130,13 +143,15 @@ export function RegistroForm() {
     }
   }
 
-  // When switching back to cliente, drop any trade value/errors (REQ-03).
+  // When switching back to cliente, drop any trade/localidad value/errors (REQ-03).
   function handleRoleChange(next: RegistroFormValues["role"]) {
     setValue("role", next, { shouldValidate: true });
     clearErrors("role");
     if (next === "cliente") {
       setValue("trade", "");
       clearErrors("trade");
+      setValue("localidad", "");
+      clearErrors("localidad");
     }
   }
 
@@ -344,6 +359,44 @@ export function RegistroForm() {
                 {TRADES.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
                     {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </Field>
+      )}
+
+      {/* Conditional localidad select for prestador */}
+      {isPrestador && (
+        <Field
+          id="localidad"
+          label={copy.registro.localidadLabel}
+          required
+          help={copy.registro.localidadHelp}
+          error={errors.localidad?.message}
+        >
+          {({ id, describedBy, invalid }) => (
+            <Select
+              value={localidad}
+              onValueChange={(value) => {
+                setValue("localidad", value, { shouldValidate: true });
+                clearErrors("localidad");
+              }}
+              disabled={locked}
+            >
+              <SelectTrigger
+                id={id}
+                aria-required="true"
+                aria-invalid={invalid}
+                aria-describedby={describedBy}
+              >
+                <SelectValue placeholder={copy.registro.localidadPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {LOCALIDADES.map((u) => (
+                  <SelectItem key={u.id} value={u.label}>
+                    {u.label}
                   </SelectItem>
                 ))}
               </SelectContent>

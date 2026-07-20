@@ -10,6 +10,7 @@ const VALID_CLIENTE = {
   phone: "1165432100",
   password: "12345678",
   trade: "",
+  localidad: "",
 };
 
 const VALID_PRESTADOR = {
@@ -20,6 +21,7 @@ const VALID_PRESTADOR = {
   phone: "+541165432100",
   password: "securepass",
   trade: "Electricista",
+  localidad: "Posadas",
 };
 
 describe("registroSchema — valid cases", () => {
@@ -93,6 +95,32 @@ describe("registroSchema — prestador trade requirement", () => {
 
   it("cliente with empty trade → parses ok (trade not required for cliente)", () => {
     const result = registroSchema.safeParse({ ...VALID_CLIENTE, trade: "" });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("registroSchema — prestador localidad requirement", () => {
+  it("prestador without localidad → issue on localidad path", () => {
+    const result = registroSchema.safeParse({ ...VALID_PRESTADOR, localidad: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const localidadIssue = result.error.issues.find((i) => i.path[0] === "localidad");
+      expect(localidadIssue).toBeDefined();
+      expect(localidadIssue?.message).toBe(copy.fieldErrors.localidad);
+    }
+  });
+
+  it("prestador with whitespace-only localidad → issue on localidad", () => {
+    const result = registroSchema.safeParse({ ...VALID_PRESTADOR, localidad: "   " });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const localidadIssue = result.error.issues.find((i) => i.path[0] === "localidad");
+      expect(localidadIssue).toBeDefined();
+    }
+  });
+
+  it("cliente with empty localidad → parses ok (localidad not required for cliente)", () => {
+    const result = registroSchema.safeParse({ ...VALID_CLIENTE, localidad: "" });
     expect(result.success).toBe(true);
   });
 });
@@ -181,6 +209,7 @@ describe("registroDefaults", () => {
       "phone",
       "password",
       "trade",
+      "localidad",
     ];
     for (const key of keys) {
       expect(registroDefaults).toHaveProperty(key);

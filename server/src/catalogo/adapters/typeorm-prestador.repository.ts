@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryRunner } from 'typeorm';
 import { Prestador } from '../domain/prestador.entity.js';
 import { Servicio } from '../domain/servicio.entity.js';
 import { filtrarYPaginarPorCobertura } from '../domain/cobertura-paginacion.util.js';
@@ -8,6 +8,7 @@ import {
   IPrestadorRepository,
   BusquedaCriteria,
   PaginatedResult,
+  CreatePrestadorData,
 } from '../ports/prestador-repository.port.js';
 import {
   SERVICIO_REPOSITORY,
@@ -128,5 +129,30 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
       descripcion: s.descripcion,
       rangoPrecio: rango,
     };
+  }
+
+  async create(
+    data: CreatePrestadorData,
+    qr?: QueryRunner,
+  ): Promise<Prestador> {
+    const prestador = this.repo.create({
+      id: data.id,
+      nombreCompleto: data.nombreCompleto,
+      oficios: data.oficios,
+      categoria: data.categoria,
+      calificacionPromedio: data.calificacionPromedio ?? 0,
+      cantidadResenas: data.cantidadResenas ?? 0,
+      zonaCobertura: data.zonaCobertura,
+      localidad: data.localidad,
+      cuentaActiva: data.cuentaActiva,
+      // The prestador registered with a trade, so they have published that
+      // service. Setting true makes them immediately searchable (the catalog
+      // filter requires tieneServiciosPublicados=true).
+      tieneServiciosPublicados: true,
+      visible: data.visible,
+      disponibilidadResumen: data.disponibilidadResumen ?? null,
+    });
+
+    return qr?.manager.save(Prestador, prestador) ?? this.repo.save(prestador);
   }
 }

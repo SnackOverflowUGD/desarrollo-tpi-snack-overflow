@@ -38,6 +38,12 @@ export const proposalSchema = z.object({
     }),
   // Free text, non-empty only — the curated set lives in copy, NOT here.
   franja: z.string().trim().min(1, copy.bandeja.errors.franjaRequerida),
+  // Optional price justification (UC-08), up to 500 chars.
+  justificacionPrecio: z
+    .string()
+    .max(500, copy.bandeja.errors.justificacionMaxLength)
+    .optional()
+    .or(z.literal("")),
 });
 
 export type ProposalFormValues = z.infer<typeof proposalSchema>;
@@ -46,4 +52,5 @@ export const proposalDefaults: ProposalFormValues = {
   precioEstimado: 0,
   fecha: "",
   franja: "",
+  justificacionPrecio: "",
 };

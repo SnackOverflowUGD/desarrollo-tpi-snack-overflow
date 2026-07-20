@@ -17,6 +17,7 @@ export interface SessionUser {
   email?: string;
   role?: string;
   name?: string;
+  lastName?: string;
 }
 
 export type SessionStatus = "authenticated" | "anonymous";

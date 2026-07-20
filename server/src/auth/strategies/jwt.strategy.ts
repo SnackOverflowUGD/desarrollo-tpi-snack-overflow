@@ -7,6 +7,9 @@ import { UserRole } from '../domain/user-role.enum.js';
 export interface JwtPayload {
   sub: string;
   role: UserRole;
+  email: string;
+  name: string;
+  lastName: string;
   providerStatus?: ProviderStatus;
   iat?: number;
   exp?: number;

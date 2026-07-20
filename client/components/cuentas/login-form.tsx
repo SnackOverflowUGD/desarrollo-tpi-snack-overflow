@@ -8,7 +8,6 @@
  * the httpOnly cookie set server-side.
  */
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +30,6 @@ import { useSession } from "@/lib/session/session-context";
 import { safeRedirectTarget } from "@/lib/session/next-redirect";
 
 export function LoginForm({ next }: { next?: string }) {
-  const router = useRouter();
   const { refresh } = useSession();
 
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -71,11 +69,17 @@ export function LoginForm({ next }: { next?: string }) {
     });
 
     if (result.ok) {
-      // Session is set (cookie). Re-hydrate the client session, then redirect.
+      // Session is set (cookie). We must delay the navigation just enough for
+      // the browser to commit the Set-Cookie to the cookie jar — navigating
+      // immediately can lose the cookie because fetch() resolves before the
+      // browser's cookie service finishes processing the response headers.
+      // Once committed, a full page load ensures the server renders the
+      // authenticated navbar (router.push() would serve stale RSC layout data
+      // cached before login).
       setSubmitted(true);
       refresh();
-      router.refresh();
-      router.push(safeRedirectTarget(next));
+      await new Promise((r) => setTimeout(r, 80));
+      window.location.href = safeRedirectTarget(next);
       return;
     }
 

@@ -90,10 +90,34 @@ export function ContratacionCard({
         <DatoLinea label={copy.seguimiento.fechaLabel} valor={item.fecha} />
         <DatoLinea label={copy.seguimiento.franjaLabel} valor={item.franja} />
         {mostrarPrecio && (
-          <DatoLinea
-            label={copy.seguimiento.precioLabel}
-            valor={`$${item.precioEstimado}`}
-          />
+          <>
+            <DatoLinea
+              label={copy.seguimiento.precioLabel}
+              valor={`$${item.precioEstimado}`}
+            />
+            {item.fechaPropuesta && (
+              <DatoLinea
+                label={copy.seguimiento.fechaPropuestaLabel}
+                valor={item.fechaPropuesta}
+              />
+            )}
+            {item.franjaPropuesta && (
+              <DatoLinea
+                label={copy.seguimiento.franjaPropuestaLabel}
+                valor={item.franjaPropuesta}
+              />
+            )}
+            {item.justificacionPrecio && (
+              <div className="mt-2 rounded-md bg-surface-sunken px-3 py-2 text-sm">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {copy.seguimiento.justificacionLabel}
+                </p>
+                <p className="mt-1 text-foreground">
+                  {item.justificacionPrecio}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

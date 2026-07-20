@@ -90,10 +90,12 @@ export function Navbar() {
               </span>
               {(session.user?.name ?? session.user?.email) && (
                 <Link
-                  href="/cuenta"
-                  className="max-w-[16ch] truncate hover:underline underline-offset-4"
+                  href={role === "prestador" ? "/cuenta/solicitudes" : "/cuenta/contrataciones"}
+                  className="max-w-[20ch] truncate hover:underline underline-offset-4"
                 >
-                  {session.user.name ?? session.user.email}
+                  {session.user.lastName
+                    ? `${session.user.name} ${session.user.lastName}`
+                    : (session.user.name ?? session.user.email)}
                 </Link>
               )}
             </span>
@@ -135,7 +137,7 @@ export function Navbar() {
           <p className="px-2 text-sm text-muted-foreground" data-testid="nav-account-mobile">
             <span className="font-medium text-foreground">{roleLabel}</span>
             {(session.user?.name ?? session.user?.email)
-              ? ` · ${session.user.name ?? session.user.email}`
+              ? ` · ${session.user.lastName ? `${session.user.name} ${session.user.lastName}` : (session.user.name ?? session.user.email)}`
               : ""}
           </p>
         )}

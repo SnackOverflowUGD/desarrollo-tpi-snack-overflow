@@ -49,12 +49,70 @@ CLIENTE_EMAIL="demo.cliente@${DEMO_DOMAIN}"
 # Providers: KEY|EMAIL_LOCALPART|NOMBRE|APELLIDO|TRADE(lowercase for register)|OFICIO(categoria,exact match for search)|LOCALIDAD|CALIFICACION|DESC
 # TRADE is the lowercase register value; OFICIO is the catalog categoria the search matches.
 PRESTADORES=(
+  #╌╌╌╌ Electricistas (calificaciones 2.8 a 5.0) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
   "electricista|prestador.electricista|Ramiro|Gómez|electricista|Electricista|Posadas|4.8|Instalaciones eléctricas, tableros y reparaciones a domicilio."
+  "electricista2|prestador.electricista2|Juan|Martínez|electricista|Electricista|Posadas|4.2|Reparaciones eléctricas menores y mantenimiento."
+  "electricista3|prestador.electricista3|Pedro|López|electricista|Electricista|Oberá|3.5|Instalaciones básicas y cambio de componentes."
+  "electricista4|prestador.electricista4|Ana|Giménez|electricista|Electricista|Eldorado|5.0|Especialista en instalaciones industriales y trifásica."
+  "electricista5|prestador.electricista5|Luis|Pereyra|electricista|Electricista|Puerto Iguazú|2.8|Trabajos eléctricos sencillos a domicilio."
+  "electricista6|prestador.electricista6|María|Rivas|electricista|Electricista|Garupá|4.9|Domótica e instalaciones inteligentes."
+  "electricista7|prestador.electricista7|Jorge|Acosta|electricista|Electricista|San Vicente|3.2|Electricidad rural y mantenimiento de bombas."
+
+  #╌╌╌╌ Plomeros (calificaciones 2.5 a 4.9) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
   "plomero|prestador.plomero|Diego|Fernández|plomero|Plomero|Posadas|4.6|Destapaciones, instalación de cañerías y reparación de pérdidas."
+  "plomero2|prestador.plomero2|Laura|Ramírez|plomero|Plomero|Posadas|4.9|Termofusión y sistemas de agua caliente."
+  "plomero3|prestador.plomero3|Héctor|Morales|plomero|Plomero|Oberá|3.8|Reparaciones de pérdidas y cambio de grifería."
+  "plomero4|prestador.plomero4|Silvia|Medina|plomero|Plomero|Apóstoles|4.4|Instalación de tanques y sistemas de bombeo."
+  "plomero5|prestador.plomero5|Carlos|Duarte|plomero|Plomero|Leandro N. Alem|2.5|Arreglos básicos de plomería."
+
+  #╌╌╌╌ Carpinteros (calificaciones 3.0 a 4.9) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
   "carpintero|prestador.carpintero|Martín|Sosa|carpintero|Carpintero|Oberá|4.9|Muebles a medida, reparaciones y colocación de aberturas."
+  "carpintero2|prestador.carpintero2|Valentina|Gutiérrez|carpintero|Carpintero|Posadas|4.5|Cocinas integradas y placares empotrados."
+  "carpintero3|prestador.carpintero3|Roberto|Vera|carpintero|Carpintero|Garupá|3.0|Reparaciones de muebles y cambio de bisagras."
+
+  #╌╌╌╌ Gasistas (calificaciones 3.5 a 4.7) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
   "gasista|prestador.gasista|Lucía|Benítez|gasista|Gasista matriculado|Eldorado|4.7|Instalaciones de gas, conexión de artefactos y certificaciones."
+  "gasista2|prestador.gasista2|Marcelo|Farias|gasista|Gasista matriculado|Posadas|4.1|Reparación de calefones y termotanques."
+  "gasista3|prestador.gasista3|Gabriela|Sosa|gasista|Gasista matriculado|Montecarlo|3.5|Certificaciones y colocación de artefactos."
+
+  #╌╌╌╌ Pintores (calificaciones 1.5 a 4.8) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
   "pintor|prestador.pintor|Andrés|Rojas|pintor|Pintor|Garupá|4.5|Pintura interior y exterior, revoques y trabajos en altura."
+  "pintor2|prestador.pintor2|Camila|Torres|pintor|Pintor|Posadas|4.8|Pintura decorativa, estucado y texturas."
+  "pintor3|prestador.pintor3|Fernando|Álvarez|pintor|Pintor|Oberá|3.2|Pintura básica y blanqueo."
+  "pintor4|prestador.pintor4|Florencia|Mendoza|pintor|Pintor|Apóstoles|1.5|Trabajos de pintura sencillos (precios accesibles)."
+
+  #╌╌╌╌ Cerrajeros (calificaciones 3.0 a 4.8) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
   "cerrajero|prestador.cerrajero|Sofía|Acuña|cerrajero|Cerrajero|Posadas|4.8|Aperturas, cambio de cerraduras y duplicado de llaves 24hs."
+  "cerrajero2|prestador.cerrajero2|Ricardo|Luna|cerrajero|Cerrajero|Eldorado|4.3|Cerraduras digitales y sistemas de seguridad."
+  "cerrajero3|prestador.cerrajero3|Mónica|Paz|cerrajero|Cerrajero|San Vicente|3.0|Apertura de puertas y cambio de cilindros."
+
+  #╌╌╌╌ Herreros (calificaciones 3.8 a 4.6) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  "herrero|prestador.herrero|Patricio|Silvero|herrero|Herrero|Posadas|4.6|Portones, rejas y estructuras metálicas a medida."
+  "herrero2|prestador.herrero2|Natalia|Coronel|herrero|Herrero|Oberá|4.0|Barandas, escaleras y muebles de hierro."
+  "herrero3|prestador.herrero3|Gustavo|Romero|herrero|Herrero|Puerto Iguazú|3.8|Soldadura en general y reparaciones metálicas."
+
+  #╌╌╌╌ Techistas (calificaciones 2.0 a 4.7) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  "techista|prestador.techista|Alejandro|Domínguez|techista|Techista|Posadas|4.7|Reparación de techos, filtraciones y recambio de chapas."
+  "techista2|prestador.techista2|Daniela|Flores|techista|Techista|Garupá|4.2|Impermeabilizaciones y terrazas."
+  "techista3|prestador.techista3|Sergio|Godoy|techista|Techista|San Ignacio|2.0|Arreglos menores de goteras."
+
+  #╌╌╌╌ Jardineros (calificaciones 3.0 a 4.5) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  "jardinero|prestador.jardinero|Elena|Ayala|jardinero|Jardinero|Posadas|4.5|Diseño de jardines, poda y mantenimiento integral."
+  "jardinero2|prestador.jardinero2|Pablo|Báez|jardinero|Jardinero|Candelaria|3.8|Corte de césped y limpieza de terrenos."
+  "jardinero3|prestador.jardinero3|Romina|Cabral|jardinero|Jardinero|Santa Ana|3.0|Mantenimiento de jardines domiciliarios."
+
+  #╌╌╌╌ Albañiles (calificaciones 1.0 a 4.6) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  "albanil|prestador.albanil|Oscar|Vázquez|albañil|Albañil|Posadas|4.6|Construcción en seco y refacciones generales."
+  "albanil2|prestador.albanil2|Graciela|Moreno|albañil|Albañil|Leandro N. Alem|3.5|Revogues, contrapisos y colocación de cerámicos."
+  "albanil3|prestador.albanil3|Alberto|Ibáñez|albañil|Albañil|Jardín América|1.0|Trabajos básicos de albañilería (consultar disponibilidad)."
+
+  #╌╌╌╌ Vidrieros (calificaciones 3.5 a 4.3) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  "vidriero|prestador.vidriero|Andrea|Méndez|vidriero|Vidriero|Posadas|4.3|Colocación de vidrios, mamparas y espejos a medida."
+  "vidriero2|prestador.vidriero2|Fabián|Roldán|vidriero|Vidriero|Oberá|3.5|Reparación de ventanas y cambio de vidrios rotos."
+
+  #╌╌╌╌ Lavanderos (calificaciones 4.0 a 4.4) ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+  "lavandero|prestador.lavandero|Rita|Aguirre|lavandero|Lavandero|Posadas|4.4|Lavado y planchado de ropa con recogida a domicilio."
+  "lavandero2|prestador.lavandero2|Mario|Cáceres|lavandero|Lavandero|Garupá|4.0|Lavado de prendas delicadas y uniformes."
 )
 
 psql() {
@@ -172,11 +230,20 @@ zona_cobertura() {
   local loc="$1"
   local lat lng
   case "$loc" in
-    Posadas)   lat=-27.3671; lng=-55.8969 ;;
-    Garupá)    lat=-27.4833; lng=-55.8333 ;;
-    Oberá)     lat=-27.4833; lng=-55.1167 ;;
-    Eldorado)  lat=-26.4000; lng=-54.6167 ;;
-    *)         lat=-27.3671; lng=-55.8969 ;;  # default: Posadas
+    Posadas)          lat=-27.3671; lng=-55.8969 ;;
+    Garupá)           lat=-27.4833; lng=-55.8333 ;;
+    Oberá)            lat=-27.4833; lng=-55.1167 ;;
+    Eldorado)         lat=-26.4000; lng=-54.6167 ;;
+    "Puerto Iguazú")  lat=-25.6000; lng=-54.5667 ;;
+    "San Vicente")    lat=-26.6167; lng=-54.1333 ;;
+    "Leandro N. Alem") lat=-27.6500; lng=-55.3333 ;;
+    Apóstoles)        lat=-27.9167; lng=-55.7500 ;;
+    Montecarlo)       lat=-26.5667; lng=-54.7500 ;;
+    "San Ignacio")    lat=-27.2667; lng=-55.5333 ;;
+    "Santa Ana")      lat=-27.4667; lng=-55.5833 ;;
+    Candelaria)       lat=-27.4667; lng=-55.7333 ;;
+    "Jardín América") lat=-27.0500; lng=-55.2333 ;;
+    *)                lat=-27.3671; lng=-55.8969 ;;  # default: Posadas
   esac
   # 0.3° ≈ 33 km — enough to be city-specific but not overlap neighbouring cities
   LC_ALL=C awk -v lat="$lat" -v lng="$lng" -v loc="$loc" 'BEGIN {

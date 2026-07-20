@@ -155,6 +155,7 @@ export interface ContratacionListItem {
   fechaPropuesta?: string | null;
   franjaPropuesta?: string | null;
   precioEstimado?: number | null;
+  justificacionPrecio?: string | null;
   estado: ContratacionEstado;
   createdAt: string;
 }
@@ -167,6 +168,7 @@ export interface SendProposalPayload {
   fecha: string; // ISO date `YYYY-MM-DD`, today or future
   franja: string;
   precioEstimado: number; // > 0
+  justificacionPrecio?: string; // optional, up to 500 chars
 }
 
 /** Discriminated result of `listarSolicitudes`. NEVER thrown for HTTP errors. */
@@ -373,6 +375,7 @@ export interface ContratacionDetail {
   fechaPropuesta?: string | null;
   franjaPropuesta?: string | null;
   precioEstimado?: number | null;
+  justificacionPrecio?: string | null;
   estado: ContratacionEstado;
   createdAt: string;
   historial: ContratacionHistorialItem[];

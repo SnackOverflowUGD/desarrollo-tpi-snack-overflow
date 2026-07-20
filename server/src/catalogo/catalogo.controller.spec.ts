@@ -61,6 +61,10 @@ class FakePrestadorRepo implements IPrestadorRepository {
       resenas: [],
     };
   }
+
+  async create(): Promise<any> {
+    return {};
+  }
 }
 
 class FakeGeocodingService implements IGeocodingService {

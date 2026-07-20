@@ -76,6 +76,7 @@ function makeMocks() {
   const prestadorRepo: jest.Mocked<IPrestadorRepository> = {
     findByCobertura: jest.fn(),
     findByIdWithProfile: jest.fn(),
+    create: jest.fn().mockResolvedValue({} as any),
   };
 
   const geocodingService: jest.Mocked<IGeocodingService> = {

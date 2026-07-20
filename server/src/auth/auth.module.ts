@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CatalogoModule } from '../catalogo/catalogo.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './application/auth.service.js';
 import { RegistrationService } from './application/registration.service.js';
@@ -33,6 +34,7 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
       signOptions: { expiresIn: '2h' },
     }),
     TypeOrmModule.forFeature([User, PasswordResetToken, RegulatedTrade]),
+    CatalogoModule,
   ],
   controllers: [AuthController],
   providers: [

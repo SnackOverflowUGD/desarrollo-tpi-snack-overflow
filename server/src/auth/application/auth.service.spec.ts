@@ -63,6 +63,7 @@ function makeMocks() {
     findByEmail: jest.fn(),
     findById: jest.fn(),
     updatePasswordHash: jest.fn().mockResolvedValue(undefined),
+    create: jest.fn().mockResolvedValue({} as any),
   };
 
   const attemptStore: jest.Mocked<IAttemptStore> = {

@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert } from "@/components/ui/alert";
 import { Field } from "@/components/ui/field";
 import { toast } from "@/components/ui/toaster";
@@ -91,6 +92,7 @@ export function PresupuestarForm({
       precioEstimado: values.precioEstimado,
       fecha: values.fecha,
       franja: values.franja,
+      justificacionPrecio: values.justificacionPrecio || undefined,
     });
 
     if (result.ok) {
@@ -156,6 +158,24 @@ export function PresupuestarForm({
             aria-describedby={describedBy}
             disabled={busy || succeeded}
             {...register("precioEstimado", { valueAsNumber: true })}
+          />
+        )}
+      </Field>
+
+      <Field
+        id={`justificacion-${contratacionId}`}
+        label={copy.bandeja.justificacionLabel}
+        error={errors.justificacionPrecio?.message}
+      >
+        {({ id, describedBy, invalid }) => (
+          <Textarea
+            id={id}
+            placeholder={copy.bandeja.justificacionPlaceholder}
+            rows={3}
+            aria-invalid={invalid}
+            aria-describedby={describedBy}
+            disabled={busy || succeeded}
+            {...register("justificacionPrecio")}
           />
         )}
       </Field>

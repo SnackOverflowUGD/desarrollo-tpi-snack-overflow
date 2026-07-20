@@ -19,12 +19,12 @@
   --color-muted-foreground: #5c5550;
   --color-border: #e5e0d8;
   --color-border-strong: #cbc3b8;
-  --color-ring: #b8431f;
+  --color-ring: #2563eb;
 
   /* ---- Color: brand ---- */
-  --color-primary: #b8431f;
-  --color-primary-hover: #9a3417;
-  --color-primary-subtle: #fbede7;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-subtle: #dbeafe;
   --color-on-primary: #ffffff;
   --color-secondary: #1f3a34;
   --color-secondary-subtle: #e7f0ec;
@@ -50,7 +50,7 @@
   --color-state-solicitada: #1f5e8c;
   --color-state-presupuestada: #b7791f;
   --color-state-confirmada: #0e8c5a;
-  --color-state-encurso: #b8431f;
+  --color-state-encurso: #2563eb;
   --color-state-finalizada: #5c5550;
   --color-state-cancelada: #c2331f;
 
@@ -82,18 +82,18 @@
  * primary only reaches ~3:1, fails AA; dark ink reaches ~6:1).
  * -------------------------------------------------------------------------- */
 .dark {
-  --color-background: #1a1715;
-  --color-surface: #252019;
-  --color-surface-raised: #2e2820;
-  --color-surface-sunken: #15110f;
-  --color-foreground: #f5f1ea;
-  --color-muted-foreground: #a89e94;
-  --color-border: #3a332c;
-  --color-border-strong: #4d4439;
-  --color-ring: #e07a4f;
-  --color-primary: #e07a4f;
-  --color-primary-hover: #ec9069;
-  --color-primary-subtle: #3a241c;
+  --color-background: #121316;
+  --color-surface: #1b1c20;
+  --color-surface-raised: #232528;
+  --color-surface-sunken: #0d0e10;
+  --color-foreground: #eeedea;
+  --color-muted-foreground: #9ca0a8;
+  --color-border: #33353b;
+  --color-border-strong: #43464c;
+  --color-ring: #60a5fa;
+  --color-primary: #60a5fa;
+  --color-primary-hover: #93c5fd;
+  --color-primary-subtle: #1e3a5f;
   --color-on-primary: #1a1715;
   --color-accent: #2bb57c;
   --color-accent-subtle: #13352a;
@@ -110,7 +110,7 @@
   --color-state-solicitada: #5ba0ce;
   --color-state-presupuestada: #e0a53a;
   --color-state-confirmada: #2bb57c;
-  --color-state-encurso: #e07a4f;
+  --color-state-encurso: #60a5fa;
   --color-state-finalizada: #a89e94;
   --color-state-cancelada: #e76a52;
 }

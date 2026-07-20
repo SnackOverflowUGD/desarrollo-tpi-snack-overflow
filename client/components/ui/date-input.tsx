@@ -1,15 +1,23 @@
 "use client";
 
 /**
- * DateInput — controlled text input that displays dates in dd/mm/yyyy format
- * while storing/emitting values as YYYY-MM-DD (ISO 8601).
+ * DateInput — controlled date input with dual interaction:
+ *   1. Text input: type dd/mm/aaaa directly (converts on blur)
+ *   2. Calendar button: opens a popover calendar for visual date picking
  *
- * Designed to work with react-hook-form's Controller pattern so the RHF field
- * value is always YYYY-MM-DD (matching backend and zod schemas), while the user
- * sees and types in the locale-friendly dd/mm/aaaa format.
+ * The controlled value is always YYYY-MM-DD (ISO 8601), matching the backend
+ * and zod schemas. The user sees and types in dd/mm/aaaa.
  */
 import { useRef, useState } from "react";
+import { CalendarIcon } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -54,20 +62,20 @@ export interface DateInputProps {
   onBlur?: () => void;
   disabled?: boolean;
   className?: string;
-  /** Minimum allowed date in YYYY-MM-DD format (not enforced in UI, only schema). */
+  /** Minimum allowed date in YYYY-MM-DD format. */
   min?: string;
+  /** Maximum allowed date in YYYY-MM-DD format. */
+  max?: string;
   "aria-required"?: React.AriaAttributes["aria-required"];
   "aria-invalid"?: React.AriaAttributes["aria-invalid"];
   "aria-describedby"?: string;
 }
 
 /**
- * A text input that shows dd/mm/aaaa to the user but keeps YYYY-MM-DD in the
- * form state. Partial input is allowed while typing; conversion happens on blur.
- *
- * Design: while the user is focused/editing we use a local `draft` state.
- * When not editing, the displayed value is derived from the ISO `value` prop.
- * This avoids the setState-in-effect anti-pattern.
+ * A text input + calendar popover that shows dd/mm/aaaa to the user but keeps
+ * YYYY-MM-DD in the form state. Partial text input is allowed while typing;
+ * conversion happens on blur. The calendar button opens a month-grid popover
+ * for visual month-by-month selection.
  */
 export function DateInput({
   id,
@@ -77,14 +85,17 @@ export function DateInput({
   onBlur,
   disabled,
   className,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   min,
+  max,
   ...ariaProps
 }: DateInputProps) {
   // `draft` holds the raw text while the user is actively typing.
   // `null` means "not editing" → derive display from the `value` prop.
   const [draft, setDraft] = useState<string | null>(null);
+  // Calendar popover open state.
+  const [open, setOpen] = useState(false);
   const isEditing = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // The value shown in the input:
   //   • while editing: whatever the user typed (draft)
@@ -128,29 +139,63 @@ export function DateInput({
     onBlur?.();
   }
 
+  function handleCalendarSelect(isoDate: string) {
+    onChange(isoDate);
+    setDraft(null);
+    setOpen(false);
+    // Refocus the text input so the user can continue keyboard entry.
+    inputRef.current?.focus();
+  }
+
   return (
-    <input
-      type="text"
-      inputMode="numeric"
-      id={id}
-      name={name}
-      value={displayed}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      disabled={disabled}
-      placeholder="dd/mm/aaaa"
-      autoComplete="off"
-      data-slot="input"
-      className={cn(
-        "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 py-2 text-foreground transition-colors md:h-10",
-        "placeholder:text-muted-foreground",
-        "focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        "disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-muted-foreground",
-        "aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:outline-error",
-        className,
-      )}
-      {...ariaProps}
-    />
+    <div className={cn("relative flex items-center gap-0", className)}>
+      <input
+        type="text"
+        inputMode="numeric"
+        id={id}
+        name={name}
+        ref={inputRef}
+        value={displayed}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        disabled={disabled}
+        placeholder="dd/mm/aaaa"
+        autoComplete="off"
+        data-slot="input"
+        className={cn(
+          "flex h-11 w-full rounded-md border border-border-strong bg-surface px-3 py-2 pr-10 text-foreground transition-colors md:h-10",
+          "placeholder:text-muted-foreground",
+          "focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          "disabled:cursor-not-allowed disabled:bg-surface-sunken disabled:text-muted-foreground",
+          "aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:outline-error",
+        )}
+        {...ariaProps}
+      />
+
+      {/* Calendar toggle button — overlaid inside the input area */}
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={disabled}
+            aria-label="Seleccionar fecha"
+            className="absolute right-1 top-1/2 -translate-y-1/2 size-9 text-muted-foreground hover:text-foreground"
+          >
+            <CalendarIcon className="size-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-auto p-3">
+          <Calendar
+            selected={value}
+            onSelect={handleCalendarSelect}
+            fromDate={min}
+            toDate={max}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
