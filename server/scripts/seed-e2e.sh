@@ -79,14 +79,15 @@ DELETE FROM users WHERE email IN ('$CLIENTE_EMAIL','$PRESTADOR_EMAIL');
 
 # ── Register users via the API (valid argon2 hash for real login) ────────────────
 register() {
-  # $1 name, $2 lastName, $3 email, $4 password, $5 role, [$6 trade]
-  local payload
-  if [[ -n "${6:-}" ]]; then
-    payload=$(printf '{"name":"%s","lastName":"%s","email":"%s","phone":"+5493764000000","password":"%s","role":"%s","trade":"%s"}' "$1" "$2" "$3" "$4" "$5" "$6")
-  else
-    payload=$(printf '{"name":"%s","lastName":"%s","email":"%s","phone":"+5493764000000","password":"%s","role":"%s"}' "$1" "$2" "$3" "$4" "$5")
-  fi
-  local resp status
+  # $1 name, $2 lastName, $3 email, $4 password, $5 role, [$6 trade], [$7 localidad]
+  # Since the registro-localidad feature, POST /auth/register auto-creates the
+  # catalog `prestadores` row and REQUIRES localidad for the prestador role.
+  local payload resp status
+  payload=$(printf '{"name":"%s","lastName":"%s","email":"%s","phone":"+5493764000000","password":"%s","role":"%s"' \
+    "$1" "$2" "$3" "$4" "$5")
+  if [[ -n "${6:-}" ]]; then payload+=$(printf ',"trade":"%s"' "$6"); fi
+  if [[ -n "${7:-}" ]]; then payload+=$(printf ',"localidad":"%s"' "$7"); fi
+  payload+='}'
   resp=$(curl -s -w '\n%{http_code}' -X POST "$BACKEND_URL/auth/register" \
     -H 'Content-Type: application/json' -d "$payload")
   status=$(printf '%s' "$resp" | tail -n1)
@@ -101,7 +102,8 @@ register "Carla" "Cliente" "$CLIENTE_EMAIL" "$CLIENTE_PASSWORD" "cliente"
 
 echo "==> Register prestador via API"
 # Plain (non-regulated) trade keeps providerStatus = HABILITADO so it can operate.
-register "Pedro" "Prestador" "$PRESTADOR_EMAIL" "$PRESTADOR_PASSWORD" "prestador" "$OFICIO"
+# localidad is REQUIRED for the prestador role; register auto-creates the catalog row.
+register "Pedro" "Prestador" "$PRESTADOR_EMAIL" "$PRESTADOR_PASSWORD" "prestador" "$OFICIO" "Posadas"
 
 # ── Resolve the prestador user id ────────────────────────────────────────────────
 PRESTADOR_ID=$(psql -c "SELECT id FROM users WHERE email = '$PRESTADOR_EMAIL';" | tr -d '[:space:]')
@@ -113,30 +115,22 @@ fi
 echo "    prestador user id: $PRESTADOR_ID"
 echo "    cliente   user id: $CLIENTE_ID"
 
-# ── Insert the catalog provider row + a published service ────────────────────────
-# zona_cobertura is the CoberturaZona.toJSON() shape: { geometry, localidad }.
-# geometry is an Argentina-wide GeoJSON Polygon ([lng,lat] order, ring closed),
-# so any Argentine geocode result is "covered". tiene_servicios_publicados=true is
-# REQUIRED for the provider to appear in search.
-echo "==> Insert prestadores catalog row (Argentina-wide coverage) + service"
+# ── Update the auto-created catalog provider row + insert a published service ─────
+# register (registro-localidad feature) already created the `prestadores` row
+# (16.5km coverage circle for Posadas). We OVERWRITE zona_cobertura with an
+# Argentina-wide GeoJSON Polygon ([lng,lat] order, ring closed) so any Argentine
+# geocode result is "covered", and force tiene_servicios_publicados=true / visible=true
+# (both REQUIRED for the provider to appear in search).
+echo "==> Update prestadores catalog row (Argentina-wide coverage) + service"
 psql -c "
-INSERT INTO prestadores (
-  id, nombre_completo, oficios, categoria,
-  calificacion_promedio, cantidad_resenas,
-  zona_cobertura, localidad,
-  cuenta_activa, tiene_servicios_publicados, visible,
-  disponibilidad_resumen
-) VALUES (
-  '$PRESTADOR_ID',
-  'Pedro Prestador',
-  '$OFICIO',
-  '$OFICIO',
-  4.8, 12,
-  '{\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-74,-56],[-53,-56],[-53,-21],[-74,-21],[-74,-56]]]},\"localidad\":\"Posadas\"}'::jsonb,
-  'Posadas',
-  true, true, true,
-  '{\"estado\":\"disponible_esta_semana\",\"franjasDisponiblesProximos7Dias\":8}'::jsonb
-);
+UPDATE prestadores SET
+  calificacion_promedio = 4.8,
+  cantidad_resenas = 12,
+  zona_cobertura = '{\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-74,-56],[-53,-56],[-53,-21],[-74,-21],[-74,-56]]]},\"localidad\":\"Posadas\"}'::jsonb,
+  tiene_servicios_publicados = true,
+  visible = true,
+  disponibilidad_resumen = '{\"estado\":\"disponible_esta_semana\",\"franjasDisponiblesProximos7Dias\":8}'::jsonb
+WHERE id = '$PRESTADOR_ID';
 
 INSERT INTO servicios (
   id, prestador_id, categoria, descripcion,
