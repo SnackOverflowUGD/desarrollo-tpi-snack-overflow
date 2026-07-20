@@ -9,9 +9,14 @@
  * go through <ConfirmAccion> (REQ-09). See the hook module for the
  * result→UI mapping (401/403/404/409/5xx) and the double-submit guard.
  *
- * `nextPath` is the 401 redirect target — callers on a different route
- * (e.g. the bandeja) must pass their own so a stale session doesn't bounce
- * the user to the wrong page.
+ * Shared home: rendered from BOTH `seguimiento/contratacion-card.tsx`
+ * (cliente + prestador history) and `bandeja/solicitud-card.tsx` (the
+ * prestador Activas tab) — the one surface the prestador actually navigates
+ * to. Living under a neutral `acciones/` path keeps neither domain importing
+ * across the other's siblings.
+ *
+ * `nextPath` is the 401 redirect target — each caller passes its own route
+ * so a stale session doesn't bounce the user to the wrong page.
  */
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
