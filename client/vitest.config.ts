@@ -26,6 +26,8 @@ export default defineConfig({
         'lib/validation/solicitud.ts',
         'lib/api/contrataciones.ts',
         'lib/server/backend-fetch.ts',
+        'lib/api/prestador-me.ts',
+        'lib/validation/perfil.ts',
       ],
     },
   },

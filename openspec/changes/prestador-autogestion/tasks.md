@@ -42,11 +42,11 @@ All 5 slices fit the 400-line budget. Slices 3-5 are tight; if e2e/playwright fi
 
 ## Slice 4 [client] — Profile Edit (PSM-REQ-01/02/03/04)
 
-- [ ] 4.1 [client] Create `client/lib/api/prestador-me.ts`: discriminated `*-Result` client (getProfile, updateProfile) mirroring `auth.ts`/`catalogo.ts`
-- [ ] 4.2 [client] Create route handlers `client/app/api/prestadores/me/route.ts` (GET/PATCH) over `backendFetch` (Bearer forward)
-- [ ] 4.3 [client] Create `client/app/(protegido)/cuenta/perfil/page.tsx`: Server Component + client form (oficios/categoria, localidad Select from UBICACIONES, disponibilidad enum, visible)
-- [ ] 4.4 [client] Add copy keys to `client/lib/copy/es-AR.ts`
-- [ ] 4.5 [client] RTL/vitest: form renders profile, submits PATCH, maps result, invalid-localidad/enum error states
+- [x] 4.1 [client] Create `client/lib/api/prestador-me.ts`: discriminated `*-Result` client (getProfile, updateProfile) mirroring `auth.ts`/`catalogo.ts`
+- [x] 4.2 [client] Create route handlers `client/app/api/prestadores/me/route.ts` (GET/PATCH) over `backendFetch` (Bearer forward); extended `next.config.ts` rewrite exclusion to `prestadores/me` (dynamic servicio route needs the cookie→Bearer BFF)
+- [x] 4.3 [client] Create `client/app/(protegido)/cuenta/perfil/page.tsx`: Server Component + client form `components/cuentas/perfil/perfil-form.tsx` (oficios multi-checkbox from TRADES, localidad Select from UBICACIONES, disponibilidad enum Select, visible toggle); added prestador `Mi perfil` nav link
+- [x] 4.4 [client] Add copy keys to `client/lib/copy/es-AR.ts` (`cuenta.perfil` + `nav.miPerfil`)
+- [x] 4.5 [client] vitest (pure-logic, matching the project's node-env pyramid — no RTL harness exists): `prestador-me-api.test.ts` (getProfile/updateProfile status→result mapping) + `perfil-schema.test.ts` (valid submit, invalid-localidad/enum rejected, defaults + payload builder)
 
 ## Slice 5 [client] — Servicios CRUD + Onboarding (PSM-REQ-05..08, ONBOARDING-REQ-01)
 
