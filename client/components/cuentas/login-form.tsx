@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,12 +28,16 @@ import {
 import { mapValidationErrors, mapLoginError } from "@/lib/errors/field-errors";
 import { useSession } from "@/lib/session/session-context";
 import { safeRedirectTarget } from "@/lib/session/next-redirect";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "@/lib/demo/demo-credentials";
 
 export function LoginForm({ next }: { next?: string }) {
   const { refresh } = useSession();
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  // Demo-credentials helper (PoC only). Toggled by the key icon; picking an
+  // account autofills the form so anyone can log in without knowing the seed.
+  const [showDemo, setShowDemo] = useState(false);
   // After a successful 200 the form is locked until redirect (REQ-02/08).
   const [submitted, setSubmitted] = useState(false);
   // After 423 the submit stays disabled (no immediate retry, REQ-03/ESC-UI-03).
@@ -59,6 +63,14 @@ export function LoginForm({ next }: { next?: string }) {
   }, [globalError]);
 
   const locked = isSubmitting || submitted || lockedOut;
+
+  // PoC helper: autofill the form with a demo account, then clear any prior error.
+  function fillDemo(email: string) {
+    setValue("email", email, { shouldValidate: true });
+    setValue("password", DEMO_PASSWORD, { shouldValidate: true });
+    setGlobalError(null);
+    setShowDemo(false);
+  }
 
   async function onSubmit(values: LoginFormValues) {
     setGlobalError(null);
@@ -120,6 +132,52 @@ export function LoginForm({ next }: { next?: string }) {
       aria-busy={isSubmitting}
       className="flex flex-col gap-5"
     >
+      {/* Demo-credentials helper (PoC only). */}
+      <div className="relative flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowDemo((s) => !s)}
+          aria-expanded={showDemo}
+          aria-label="Ver credenciales de demo"
+          title="Ver credenciales de demo"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <KeyRound className="size-3.5" aria-hidden="true" />
+          Credenciales demo
+        </button>
+
+        {showDemo && (
+          <div className="absolute right-0 top-full z-10 mt-2 w-72 rounded-lg border border-border bg-surface p-3 shadow-lg">
+            <p className="mb-2 text-xs text-muted-foreground">
+              Usuarios demo — contraseña{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono">
+                {DEMO_PASSWORD}
+              </code>
+              . Tocá uno para completar el formulario.
+            </p>
+            <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+              {DEMO_ACCOUNTS.map((acc) => (
+                <li key={acc.email}>
+                  <button
+                    type="button"
+                    onClick={() => fillDemo(acc.email)}
+                    disabled={locked}
+                    className="flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50"
+                  >
+                    <span className="text-sm font-medium text-foreground">
+                      {acc.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {acc.email}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       {globalError && (
         <Alert ref={alertRef} variant="error" role="alert" tabIndex={-1}>
           {globalError}
