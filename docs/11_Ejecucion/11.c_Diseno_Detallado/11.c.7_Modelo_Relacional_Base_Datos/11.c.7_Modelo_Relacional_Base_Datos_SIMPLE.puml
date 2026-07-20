@@ -1,0 +1,84 @@
+@startuml
+
+scale 2.0
+hide circle
+hide empty members
+
+entity Usuario {
+
+}
+
+entity Prestador {
+
+}
+
+entity Categoria_Oficio {
+
+}
+
+entity Oficio {
+
+}
+
+entity Servicio_Publicado {
+
+}
+
+entity Disponibilidad_Recurrente {
+
+}
+
+entity Excepcion_Agenda {
+
+}
+
+entity Organismo_Regulador {
+
+}
+
+entity Habilitacion_Profesional {
+
+}
+
+entity Contratacion {
+
+}
+
+entity Estado_Contratacion {
+
+}
+
+entity Mensaje_Chat {
+
+}
+
+entity Pago {
+
+}
+
+entity Reseña {
+
+}
+
+' Relaciones
+Usuario ||--o| Prestador : "es un"
+Usuario ||--o{ Estado_Contratacion : "audita"
+Usuario ||--o{ Mensaje_Chat : "envia"
+Usuario ||--o{ Reseña : "modera"
+Prestador }o--|| Usuario : "verificado por"
+Categoria_Oficio ||..o{ Oficio : "clasifica"
+Oficio ||--o{ Habilitacion_Profesional : "requiere"
+Oficio ||--o{ Servicio_Publicado : "corresponde"
+Prestador ||--o{ Servicio_Publicado : "publica"
+Prestador ||--o{ Disponibilidad_Recurrente : "configura"
+Prestador ||--o{ Excepcion_Agenda : "configura"
+Prestador ||--o{ Habilitacion_Profesional : "posee"
+Usuario ||--o{ Contratacion : "solicita"
+Servicio_Publicado ||--o{ Contratacion : "genera"
+Contratacion ||--o{ Estado_Contratacion : "registra"
+Contratacion ||--o{ Mensaje_Chat : "contiene"
+Contratacion ||--o| Pago : "abona"
+Contratacion ||--o| Reseña : "recibe"
+Organismo_Regulador ||--o{ Habilitacion_Profesional : "habilita"
+
+@enduml
