@@ -9,6 +9,7 @@ import {
   BusquedaCriteria,
   PaginatedResult,
   CreatePrestadorData,
+  UpdatePrestadorData,
 } from '../ports/prestador-repository.port.js';
 import {
   SERVICIO_REPOSITORY,
@@ -77,6 +78,27 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
 
     const servicios = await this.servicioRepo.findByPrestadorId(id);
     return this.toPerfil(prestador, servicios);
+  }
+
+  async findById(id: string): Promise<Prestador | null> {
+    return this.repo.findOne({ where: { id } });
+  }
+
+  async update(
+    id: string,
+    patch: UpdatePrestadorData,
+    qr?: QueryRunner,
+  ): Promise<Prestador> {
+    // Load, merge and save inside the (optional) transaction's manager so the
+    // update is atomic with any sibling mutation (e.g. servicio publish-flag
+    // recompute). merge only overwrites the keys present in `patch`.
+    const manager = qr?.manager ?? this.repo.manager;
+    const existing = await manager.findOne(Prestador, { where: { id } });
+    if (!existing) {
+      throw new Error(`Prestador not found: ${id}`);
+    }
+    manager.merge(Prestador, existing, patch);
+    return manager.save(Prestador, existing);
   }
 
   private toResumen(p: Prestador): PrestadorResumen {
