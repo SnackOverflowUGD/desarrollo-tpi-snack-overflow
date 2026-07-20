@@ -1,0 +1,56 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 16 + React 19 + TypeScript (client/, App Router) |
+  NestJS 11 + TypeScript hexagonal ports/adapters (server/).
+  Architecture: modular monolith + Broker integration layer, TypeORM +
+  PostgreSQL 15 + Redis 7. Full context: openspec/project.md (binding).
+
+# ADR-006 (openspec/architecture/adr/ADR-006-estrategia-de-pruebas.md) records
+# "pirámide automatizada SIN TDD estricto" as the accepted decision. The user
+# confirmed (2026-07-20) to RESPECT ADR-006: automated test pyramid with good
+# coverage, tests written alongside the code, but NOT strict RED-GREEN-REFACTOR.
+strict_tdd: false
+
+workspaces:
+  server:
+    stack: "NestJS 11 + TypeScript, hexagonal (ports/adapters), TypeORM + PostgreSQL 15 + Redis 7"
+    test_unit: "npm test"          # jest
+    test_e2e: "npm run test:e2e"   # jest, ./test/jest-e2e.json (needs Postgres+Redis up)
+    test_cov: "npm run test:cov"   # jest --coverage; per-module thresholds already enforced in package.json
+  client:
+    stack: "Next.js 16 + React 19 + TypeScript (App Router) — see client/AGENTS.md before coding"
+    test_unit: "npm run test:unit"   # vitest run
+    test_e2e: "npm run test:e2e"     # playwright test
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - State which workspace(s) (client/server/both) the change touches
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Map every scenario to an ESC-xx id per openspec/testing-conventions.md
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale; note any ADR impact
+    - Pre/postconditions expressed as OCL translate directly into test assertions
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - Tag each task with its workspace (server/client) so apply picks the right runner
+  apply:
+    guidelines:
+      - Follow existing hexagonal ports/adapters pattern in server/; never call vendor SDKs
+        (Mercado Pago, mensajería) outside a Broker adapter
+      - client/: read node_modules/next/dist/docs before writing code — this Next.js 16 has
+        breaking changes vs. training data (see client/AGENTS.md)
+      - Tests live beside code (*.spec.ts); integration in server/test/*.e2e-spec.ts
+    tdd: false                     # ADR-006: pyramid, no strict TDD — tests alongside code
+    test_command: "cd server && npm test   # or: cd client && npm run test:unit"
+  verify:
+    test_command: "cd server && npm run test:e2e && cd client && npm run test:e2e"
+    build_command: ""
+    coverage_threshold: 90         # RNF-O.2 / ADR-006 target for core modules
+  archive:
+    - Warn before merging destructive deltas
