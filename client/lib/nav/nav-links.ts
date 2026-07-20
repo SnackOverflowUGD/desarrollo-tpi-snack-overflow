@@ -26,13 +26,15 @@ export interface NavCopy {
   crearCuenta: string;
   misContrataciones: string;
   solicitudes: string;
+  miPerfil: string;
+  misServicios: string;
 }
 
 /**
  * Links shown on the RIGHT side of the navbar, derived from the session.
  *  - anonymous            → Ingresar + Crear cuenta (primary)
  *  - authenticated cliente → Mis contrataciones
- *  - authenticated prestador → Solicitudes
+ *  - authenticated prestador → Solicitudes + Mi perfil
  * The brand (→/) and "Buscar" (→/prestadores) links are always-on and live in
  * the component itself (they do not depend on the session).
  */
@@ -50,6 +52,16 @@ export function navLinksFor(session: SessionState, copy: NavCopy): NavLink[] {
         key: "solicitudes",
         href: "/cuenta/solicitudes",
         label: copy.solicitudes,
+      },
+      {
+        key: "mi-perfil",
+        href: "/cuenta/perfil",
+        label: copy.miPerfil,
+      },
+      {
+        key: "mis-servicios",
+        href: "/cuenta/servicios",
+        label: copy.misServicios,
       },
     ];
   }

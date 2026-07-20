@@ -31,16 +31,25 @@ describe("navLinksFor", () => {
     expect(links[0].label).toBe(nav.misContrataciones);
   });
 
-  it("authenticated prestador → Solicitudes only", () => {
+  it("authenticated prestador → Solicitudes + Mi perfil + Mis servicios", () => {
     const session: SessionState = {
       status: "authenticated",
       user: { email: "pre@example.com", role: "prestador" },
     };
     const links = navLinksFor(session, nav);
 
-    expect(links).toHaveLength(1);
-    expect(links[0].href).toBe("/cuenta/solicitudes");
-    expect(links[0].label).toBe(nav.solicitudes);
+    expect(links.map((l) => l.href)).toEqual([
+      "/cuenta/solicitudes",
+      "/cuenta/perfil",
+      "/cuenta/servicios",
+    ]);
+    expect(links.map((l) => l.label)).toEqual([
+      nav.solicitudes,
+      nav.miPerfil,
+      nav.misServicios,
+    ]);
+    // Self-management links are secondary (no primary CTA in the authed navbar).
+    expect(links.every((l) => l.primary === undefined)).toBe(true);
   });
 
   it("authenticated with unknown/absent role falls back to cliente", () => {

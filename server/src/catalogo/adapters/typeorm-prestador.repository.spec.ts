@@ -325,3 +325,104 @@ describe('TypeOrmPrestadorRepository.toResumen() — centroCobertura population'
     expect(near.centroCobertura!.lng).toBeCloseTo(0, 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Slice 1 — self-management mutation surface (REPO-PRESTADOR-UPDATE-01)
+// findById (raw entity read) + update (partial patch, QueryRunner-aware).
+// ---------------------------------------------------------------------------
+
+/**
+ * Fake EntityManager modeling the persisted prestadores table. `update()` loads
+ * via findOne, merges only the patched keys, and saves — so assertions can
+ * check post-state and that a QueryRunner routes writes transactionally.
+ */
+function makeManager(rows: Prestador[]) {
+  return {
+    rows,
+    findOne: jest.fn(
+      async (_entity: unknown, { where }: { where: { id: string } }) =>
+        rows.find((r) => r.id === where.id) ?? null,
+    ),
+    merge: jest.fn(
+      (_entity: unknown, target: Prestador, patch: Partial<Prestador>) =>
+        Object.assign(target, patch),
+    ),
+    save: jest.fn(async (_entity: unknown, obj: Prestador) => {
+      const idx = rows.findIndex((r) => r.id === obj.id);
+      if (idx === -1) rows.push(obj);
+      else rows[idx] = obj;
+      return obj;
+    }),
+  };
+}
+
+function makeMutableRepo(rows: Prestador[]) {
+  const manager = makeManager(rows);
+  const prestadorRepo = {
+    manager,
+    findOne: jest.fn(
+      async ({ where }: { where: { id: string } }) =>
+        rows.find((r) => r.id === where.id) ?? null,
+    ),
+  };
+  const servicioRepo: IServicioRepository = {
+    findByPrestadorId: jest.fn(async () => []),
+  } as never;
+  const repo = new TypeOrmPrestadorRepository(
+    prestadorRepo as never,
+    servicioRepo,
+  );
+  return { repo, prestadorRepo, manager };
+}
+
+describe('TypeOrmPrestadorRepository.findById()', () => {
+  it('returns the raw prestador entity', async () => {
+    const p = makePrestador('p1', zonaCuadrada());
+    const { repo } = makeMutableRepo([p]);
+    expect(await repo.findById('p1')).toBe(p);
+  });
+
+  it('returns null when not found', async () => {
+    const { repo } = makeMutableRepo([]);
+    expect(await repo.findById('missing')).toBeNull();
+  });
+});
+
+describe('TypeOrmPrestadorRepository.update()', () => {
+  it('ESC-09: patches only the provided fields, leaving the rest intact', async () => {
+    const p = makePrestador('p1', zonaCuadrada());
+    p.categoria = 'Plomero';
+    p.visible = true;
+    const { repo } = makeMutableRepo([p]);
+
+    const updated = await repo.update('p1', {
+      categoria: 'Electricista',
+      visible: false,
+    });
+
+    expect(updated.categoria).toBe('Electricista');
+    expect(updated.visible).toBe(false);
+    // Untouched fields survive.
+    expect(updated.nombreCompleto).toBe('Prestador p1');
+    expect(updated.localidad).toBe('Posadas');
+  });
+
+  it('ESC-09: writes through the QueryRunner manager so it is atomic with siblings', async () => {
+    const { repo, manager: baseManager } = makeMutableRepo([]);
+    const txRows = [makePrestador('p1', zonaCuadrada())];
+    const qr = { manager: makeManager(txRows) } as never;
+
+    await repo.update('p1', { tieneServiciosPublicados: true }, qr);
+
+    expect(txRows[0].tieneServiciosPublicados).toBe(true);
+    // The base (non-transactional) manager must NOT have been used.
+    expect(baseManager.save).not.toHaveBeenCalled();
+  });
+
+  it('throws when the prestador does not exist', async () => {
+    const { repo } = makeMutableRepo([]);
+    await expect(repo.update('missing', { visible: false })).rejects.toThrow(
+      /not found/i,
+    );
+  });
+});

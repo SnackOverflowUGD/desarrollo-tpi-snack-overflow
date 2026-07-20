@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogoController } from './catalogo.controller.js';
+import { PrestadorController } from './prestador.controller.js';
 import { BuscadorService } from './application/buscador.service.js';
+import { PrestadorAutogestionService } from './application/prestador-autogestion.service.js';
 import { Prestador } from './domain/prestador.entity.js';
 import { Servicio } from './domain/servicio.entity.js';
 import { PRESTADOR_REPOSITORY } from './ports/prestador-repository.port.js';
@@ -16,9 +18,10 @@ import { RankingPorDisponibilidadStrategy } from './domain/ranking/ranking-por-d
 
 @Module({
   imports: [TypeOrmModule.forFeature([Prestador, Servicio])],
-  controllers: [CatalogoController],
+  controllers: [CatalogoController, PrestadorController],
   providers: [
     BuscadorService,
+    PrestadorAutogestionService,
     RankingPorCalificacionStrategy,
     RankingPorDistanciaStrategy,
     RankingPorDisponibilidadStrategy,

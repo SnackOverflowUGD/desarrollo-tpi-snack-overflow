@@ -9,6 +9,7 @@ import {
   BusquedaCriteria,
   PaginatedResult,
   CreatePrestadorData,
+  UpdatePrestadorData,
 } from '../ports/prestador-repository.port.js';
 import {
   SERVICIO_REPOSITORY,
@@ -79,6 +80,27 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
     return this.toPerfil(prestador, servicios);
   }
 
+  async findById(id: string): Promise<Prestador | null> {
+    return this.repo.findOne({ where: { id } });
+  }
+
+  async update(
+    id: string,
+    patch: UpdatePrestadorData,
+    qr?: QueryRunner,
+  ): Promise<Prestador> {
+    // Load, merge and save inside the (optional) transaction's manager so the
+    // update is atomic with any sibling mutation (e.g. servicio publish-flag
+    // recompute). merge only overwrites the keys present in `patch`.
+    const manager = qr?.manager ?? this.repo.manager;
+    const existing = await manager.findOne(Prestador, { where: { id } });
+    if (!existing) {
+      throw new Error(`Prestador not found: ${id}`);
+    }
+    manager.merge(Prestador, existing, patch);
+    return manager.save(Prestador, existing);
+  }
+
   private toResumen(p: Prestador): PrestadorResumen {
     const franjasCount =
       p.disponibilidadResumen?.franjasDisponiblesProximos7Dias;
@@ -145,10 +167,11 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
       zonaCobertura: data.zonaCobertura,
       localidad: data.localidad,
       cuentaActiva: data.cuentaActiva,
-      // The prestador registered with a trade, so they have published that
-      // service. Setting true makes them immediately searchable (the catalog
-      // filter requires tieneServiciosPublicados=true).
-      tieneServiciosPublicados: true,
+      // App-owned publish flag: a freshly registered prestador has no visible
+      // servicios yet, so they are NOT searchable until they publish one (the
+      // catalog filter requires tieneServiciosPublicados=true). Registration
+      // passes `false`; the value is honored here (defaulting to false).
+      tieneServiciosPublicados: data.tieneServiciosPublicados ?? false,
       visible: data.visible,
       disponibilidadResumen: data.disponibilidadResumen ?? null,
     });

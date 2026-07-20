@@ -34,10 +34,18 @@ const nextConfig: NextConfig = {
   // Everything else under `/api/*` still proxies straight through — crucially the
   // rewrite-only auth endpoints WITHOUT a local handler (`/api/auth/register`,
   // `/api/auth/forgot-password`, `/api/auth/reset-password`) and the public catalog.
+  //
+  // The SAME reasoning applies to the prestador self-management BFF
+  // (`/api/prestadores/me` and, crucially, the DYNAMIC
+  // `/api/prestadores/me/servicios/[id]` handler): they own the cookie→Bearer
+  // loop, so the catch-all must exclude the `/api/prestadores/me` prefix too or
+  // the dynamic servicio route would proxy to the backend WITHOUT the Bearer
+  // and answer 401. Everything else under `/api/*` still proxies through.
   async rewrites() {
     return [
       {
-        source: "/api/:path((?!contrataciones$|contrataciones/).*)",
+        source:
+          "/api/:path((?!contrataciones$|contrataciones/|prestadores/me$|prestadores/me/).*)",
         destination: `${process.env.BACKEND_URL ?? "http://localhost:3000"}/:path`,
       },
     ];

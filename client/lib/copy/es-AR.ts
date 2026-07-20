@@ -27,6 +27,9 @@ export const copy = {
     // Authenticated right-side actions, by role.
     misContrataciones: "Mis contrataciones",
     solicitudes: "Solicitudes",
+    // Prestador self-management shortcuts.
+    miPerfil: "Mi perfil",
+    misServicios: "Mis servicios",
     // Mobile disclosure toggle (aria-label; the button has no visible text).
     abrirMenu: "Abrir menú",
     cerrarMenu: "Cerrar menú",
@@ -602,6 +605,128 @@ export const copy = {
         "No pudimos cargar el historial. Revisá tu conexión e intentá de nuevo.",
       // Initial state (no previous estado) → "Creada".
       inicial: "Creada",
+    },
+  },
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Prestador self-management (autogestión) — perfil + servicios + onboarding.
+  // ───────────────────────────────────────────────────────────────────────
+  cuenta: {
+    perfil: {
+      title: "Mi perfil",
+      subtitle: "Editá tus datos para que los clientes te encuentren.",
+
+      oficiosLabel: "Oficios",
+      oficiosHelp: "Elegí los oficios que ofrecés.",
+      localidadLabel: "Localidad",
+      localidadHelp: "Elegí la localidad donde trabajás.",
+      localidadPlaceholder: "Seleccioná tu localidad",
+      disponibilidadLabel: "Disponibilidad",
+      disponibilidadHelp: "Contales a los clientes cuándo podés trabajar.",
+      disponibilidadPlaceholder: "Elegí tu disponibilidad",
+      disponibilidadOpciones: {
+        disponible_esta_semana: "Disponible esta semana",
+        proxima_disponible: "Próximamente disponible",
+        sin_disponibilidad: "Sin disponibilidad",
+      },
+      visibleLabel: "Mostrar mi perfil en la búsqueda",
+      visibleHelp:
+        "Si lo desactivás, no aparecés en los resultados de búsqueda.",
+
+      guardar: "Guardar cambios",
+      guardando: "Guardando…",
+      exito: "Guardamos los cambios de tu perfil.",
+
+      // Aviso cuando el prestador todavía no publicó servicios (no es buscable).
+      sinServiciosAviso:
+        "Todavía no publicaste servicios: no vas a aparecer en la búsqueda hasta publicar al menos uno.",
+      irAServicios: "Gestionar mis servicios",
+
+      // Errores de validación (zod, es-AR).
+      errors: {
+        oficiosRequerido: "Elegí al menos un oficio.",
+        localidadRequerida: "Elegí una localidad.",
+        localidadInvalida: "Elegí una localidad de la lista.",
+        disponibilidadInvalida: "Elegí una opción de disponibilidad válida.",
+      },
+
+      // Banners de resultado (role="alert").
+      errorGuardar:
+        "No pudimos guardar los cambios. Revisá tu conexión e intentá de nuevo.",
+      validacionGenerica: "Revisá los datos del formulario.",
+      // 403 — un cliente no tiene perfil de prestador.
+      soloPrestadores:
+        "Solo los prestadores pueden gestionar un perfil de prestador.",
+    },
+
+    servicios: {
+      title: "Mis servicios",
+      subtitle: "Publicá y gestioná los servicios que ofrecés.",
+
+      // Lista.
+      vacio: "Todavía no publicaste ningún servicio.",
+      ocultoBadge: "Oculto",
+      visibleBadge: "Publicado",
+      precioRango: "${min} – ${max}",
+      precioDesde: "Desde ${min}",
+      precioHasta: "Hasta ${max}",
+      precioConsultar: "Precio a consultar",
+
+      // Acciones.
+      nuevo: "Publicar un servicio",
+      editar: "Editar",
+      publicar: "Publicar",
+      ocultar: "Ocultar",
+      eliminar: "Archivar",
+      cancelar: "Cancelar",
+
+      // Formulario crear/editar.
+      categoriaLabel: "Categoría",
+      categoriaHelp: "Ej. Instalaciones eléctricas.",
+      categoriaPlaceholder: "Ej. Instalaciones eléctricas",
+      descripcionLabel: "Descripción",
+      descripcionHelp: "Contá qué incluye este servicio.",
+      descripcionPlaceholder: "Describí el servicio que ofrecés",
+      precioMinLabel: "Precio desde",
+      precioMaxLabel: "Precio hasta",
+      precioPlaceholder: "Ej. 15000",
+      visibleLabel: "Publicar este servicio (visible en la búsqueda)",
+      guardar: "Guardar servicio",
+      guardando: "Guardando…",
+
+      // Soft-delete (archivar) — confirmación reversible.
+      confirmarEliminar:
+        "¿Querés archivar este servicio? Dejará de aparecer en la búsqueda, pero podés volver a publicarlo cuando quieras.",
+      confirmarEliminarSi: "Sí, archivar",
+
+      // Errores de validación (zod, es-AR).
+      errors: {
+        categoriaRequerida: "Ingresá una categoría.",
+        descripcionRequerida: "Contá qué incluye el servicio.",
+        precioInvalido: "El precio no puede ser negativo.",
+        rangoInvalido:
+          "El precio 'desde' no puede ser mayor que el precio 'hasta'.",
+      },
+
+      // Banners de resultado (role="alert").
+      exitoCrear: "¡Servicio publicado! Ya puede aparecer en la búsqueda.",
+      exitoEditar: "Guardamos los cambios del servicio.",
+      exitoEliminar: "Archivamos el servicio. Podés volver a publicarlo cuando quieras.",
+      errorAccion:
+        "No pudimos completar la acción. Revisá tu conexión e intentá de nuevo.",
+      noDisponible: "Este servicio ya no está disponible.",
+      validacionGenerica: "Revisá los datos del formulario.",
+    },
+
+    onboarding: {
+      // Non-mandatory post-registration step guiding a new prestador to publish.
+      title: "¡Bienvenido! Completá tu perfil",
+      subtitle:
+        "Publicá tu primer servicio para empezar a aparecer en la búsqueda. Podés hacerlo ahora o más tarde.",
+      pasoPerfil: "Revisá tus oficios, tu localidad y tu disponibilidad.",
+      pasoServicio: "Publicá al menos un servicio para volverte buscable.",
+      irAServicios: "Publicar mi primer servicio",
+      omitir: "Ahora no",
     },
   },
 } as const;
