@@ -139,6 +139,66 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
     await prestadorCtx?.close();
   });
 
+  /**
+   * Setup helper for tests 8/9 (ESC-17/18): they each need their OWN fresh
+   * contratación (the story's shared `contratacionId` is already terminal —
+   * `finalizada` — by the time test 7 finishes). The state-machine walk
+   * itself (solicitar → presupuestar → confirmar → [iniciar]) is already
+   * exercised through the real UI by tests 4-7, so here it's driven via
+   * authenticated `fetch` (still real backend traffic, same BFF routes) to
+   * keep tests 8/9 focused on the thing they actually assert: cancelar
+   * through the bandeja UI. Reuses the story's seeded `prestadorId`.
+   */
+  async function crearContratacionHasta(
+    estadoObjetivo: "confirmada" | "en_curso",
+  ): Promise<string> {
+    const semilla = await clientePage.evaluate(async (id) => {
+      const r = await fetch(`/api/contrataciones/${id}`);
+      return (await r.json()) as { prestadorId: string };
+    }, contratacionId);
+
+    const creada = await clientePage.evaluate(
+      async ({ prestadorId, ubicacion, fecha, franja }) => {
+        const r = await fetch("/api/contrataciones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ubicacion,
+            prestadorId,
+            fecha,
+            franja,
+            descripcion: "Instalación adicional (setup ESC-17/18).",
+          }),
+        });
+        return (await r.json()) as { id: string };
+      },
+      { prestadorId: semilla.prestadorId, ubicacion: UBICACION, fecha: FECHA, franja: FRANJA },
+    );
+
+    await prestadorPage.evaluate(
+      async ({ id, precio, fecha, franja }) => {
+        await fetch(`/api/contrataciones/${id}/proposal`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fecha, franja, precioEstimado: Number(precio) }),
+        });
+      },
+      { id: creada.id, precio: PRECIO, fecha: FECHA, franja: FRANJA },
+    );
+
+    await clientePage.evaluate(async (id) => {
+      await fetch(`/api/contrataciones/${id}/confirm`, { method: "POST" });
+    }, creada.id);
+
+    if (estadoObjetivo === "en_curso") {
+      await prestadorPage.evaluate(async (id) => {
+        await fetch(`/api/contrataciones/${id}/start`, { method: "POST" });
+      }, creada.id);
+    }
+
+    return creada.id;
+  }
+
   test("1 — el cliente hace login real (cookie so_session httpOnly)", async () => {
     clientePage = await loginUI(clienteCtx, CLIENTE);
   });
@@ -288,8 +348,12 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
     expect(after?.estado).toBe("confirmada");
   });
 
-  test("7 — el prestador inicia (en_curso) y finaliza (finalizada)", async () => {
-    await reloadSettled(prestadorPage, "/cuenta/contrataciones");
+  test("7 — el prestador inicia (en_curso) y finaliza (finalizada) desde la bandeja Activas", async () => {
+    // Reachability fix under test: the prestador only ever navigates to
+    // /cuenta/solicitudes — before this WI, iniciar/finalizar only rendered
+    // on /cuenta/contrataciones, a page nothing links to for this role.
+    await reloadSettled(prestadorPage, "/cuenta/solicitudes");
+    await prestadorPage.getByRole("tab", { name: "Activas" }).click();
 
     await expect(
       prestadorPage.getByText("Confirmada", { exact: true }).first(),
@@ -303,10 +367,13 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
       ),
     ).toBeVisible({ timeout: 15_000 });
 
-    // The action uses router.refresh() (soft) after success; reload to get a clean
-    // SSR render of the en_curso card (busy reset, Finalizar enabled) — avoids the
-    // soft-refresh in-between state where the previous action's `busy` lingers.
-    await reloadSettled(prestadorPage, "/cuenta/contrataciones");
+    // The action uses router.refresh() (soft) after success; reload to get a
+    // clean SSR render of the en_curso card (busy reset, Finalizar enabled) —
+    // avoids the soft-refresh in-between state where the previous action's
+    // `busy` lingers. A full reload resets the bandeja to its default
+    // "Pendientes" tab, so re-select Activas.
+    await reloadSettled(prestadorPage, "/cuenta/solicitudes");
+    await prestadorPage.getByRole("tab", { name: "Activas" }).click();
 
     // After reload: prestador + en_curso → ["finalizar", "cancelar"].
     await expect(
@@ -341,12 +408,69 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
     }, contratacionId);
     expect(after?.estado).toBe("finalizada");
 
-    // And it shows as Finalizada on the prestador's tracking view. The default
-    // filter is "Activas" (hides finalizada/cancelada), so switch to "Terminadas".
-    await reloadSettled(prestadorPage, "/cuenta/contrataciones");
-    await prestadorPage.getByRole("button", { name: "Terminadas" }).click();
+    // And it shows as Finalizada on the bandeja. The default tab is
+    // "Pendientes" after a full reload, so switch to "Terminadas".
+    await reloadSettled(prestadorPage, "/cuenta/solicitudes");
+    await prestadorPage.getByRole("tab", { name: "Terminadas" }).click();
     await expect(
       prestadorPage.getByText("Finalizada", { exact: true }).first(),
     ).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("8 — el prestador cancela desde confirmada, vía la bandeja Activas (ESC-17)", async () => {
+    const id = await crearContratacionHasta("confirmada");
+
+    await reloadSettled(prestadorPage, "/cuenta/solicitudes");
+    await prestadorPage.getByRole("tab", { name: "Activas" }).click();
+
+    await expect(
+      prestadorPage.getByText("Confirmada", { exact: true }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // prestador + confirmada → ["iniciar", "cancelar"]. Cancelar is
+    // irreversible → goes through <ConfirmAccion/>.
+    await prestadorPage.getByRole("button", { name: "Cancelar" }).click();
+    const dialog = prestadorPage.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Cancelar" }).click();
+
+    await expect(
+      prestadorPage.getByText("Cancelaste la contratación."),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(errorBanner(prestadorPage)).toHaveCount(0);
+
+    const after = await prestadorPage.evaluate(async (contratacionId) => {
+      const r = await fetch(`/api/contrataciones/${contratacionId}`);
+      return (await r.json()) as { estado: string };
+    }, id);
+    expect(after.estado).toBe("cancelada");
+  });
+
+  test("9 — el prestador cancela desde en_curso, vía la bandeja Activas (ESC-18)", async () => {
+    const id = await crearContratacionHasta("en_curso");
+
+    await reloadSettled(prestadorPage, "/cuenta/solicitudes");
+    await prestadorPage.getByRole("tab", { name: "Activas" }).click();
+
+    await expect(
+      prestadorPage.getByText("En curso", { exact: true }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // prestador + en_curso → ["finalizar", "cancelar"].
+    await prestadorPage.getByRole("button", { name: "Cancelar" }).click();
+    const dialog = prestadorPage.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Cancelar" }).click();
+
+    await expect(
+      prestadorPage.getByText("Cancelaste la contratación."),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(errorBanner(prestadorPage)).toHaveCount(0);
+
+    const after = await prestadorPage.evaluate(async (contratacionId) => {
+      const r = await fetch(`/api/contrataciones/${contratacionId}`);
+      return (await r.json()) as { estado: string };
+    }, id);
+    expect(after.estado).toBe("cancelada");
   });
 });

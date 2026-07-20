@@ -8,6 +8,13 @@
  *
  * The presupuestar form is toggled open to keep each card compact; rejecting
  * has its own inline confirmation step.
+ *
+ * For non-`solicitada` items (the Activas tab: presupuestada/confirmada/
+ * en_curso), it renders the shared `<AccionesContratacion>` engine so the
+ * prestador can iniciar/finalizar/cancelar from the ONE workflow they
+ * actually navigate to — the bandeja never linked to /cuenta/contrataciones.
+ * `accionesPara` gates the actual buttons (null for presupuestada — the
+ * prestador is just waiting on the cliente there).
  */
 import { useState } from "react";
 
@@ -17,6 +24,7 @@ import type { ContratacionListItem } from "@/lib/api/contrataciones";
 import { EstadoBadge } from "@/components/cuentas/bandeja/estado-badge";
 import { PresupuestarForm } from "@/components/cuentas/bandeja/presupuestar-form";
 import { RechazarConfirm } from "@/components/cuentas/bandeja/rechazar-confirm";
+import { AccionesContratacion } from "@/components/cuentas/acciones/acciones-contratacion";
 
 function DatoLinea({ label, valor }: { label: string; valor: string }) {
   return (
@@ -71,6 +79,15 @@ export function SolicitudCard({ item }: { item: ContratacionListItem }) {
             </div>
           )}
         </div>
+      )}
+
+      {!accionable && (
+        <AccionesContratacion
+          contratacionId={item.id}
+          rol="prestador"
+          estado={item.estado}
+          nextPath="/cuenta/solicitudes"
+        />
       )}
     </li>
   );
