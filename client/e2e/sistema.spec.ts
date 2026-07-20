@@ -69,6 +69,18 @@ async function reloadSettled(page: Page, url: string): Promise<void> {
   }).toPass({ timeout: 15_000 });
 }
 
+/**
+ * Enters a date into the masked <DateInput/> (the dd/mm/aaaa text field). The
+ * component keeps YYYY-MM-DD in form state but the VISIBLE input types and
+ * validates in dd/mm/aaaa, so a raw ISO `fill` never converts (toISO rejects it
+ * → onChange("") → "Elegí una fecha."). Convert ISO → display and type that; the
+ * component re-emits the ISO value to RHF on the complete date.
+ */
+async function fillFecha(page: Page, selector: string, iso: string): Promise<void> {
+  const [year, month, day] = iso.split("-");
+  await page.locator(selector).fill(`${day}/${month}/${year}`);
+}
+
 /** Real UI login: fills the form, submits, asserts the so_session cookie is set. */
 async function loginUI(
   context: BrowserContext,
@@ -170,7 +182,7 @@ test.describe("MI-11 — flujo integrado de sistema (stack vivo + seed real)", (
     await clientePage.waitForURL(/\/prestadores\/[0-9a-f-]{36}\/solicitar$/);
 
     await clientePage.locator("#ubicacion").fill(UBICACION);
-    await clientePage.locator("#fecha").fill(FECHA);
+    await fillFecha(clientePage, "#fecha", FECHA);
     // Franja is a Select primitive: open the trigger, pick the option.
     await clientePage.locator("#franja").click();
     await clientePage.getByRole("option", { name: FRANJA }).click();
