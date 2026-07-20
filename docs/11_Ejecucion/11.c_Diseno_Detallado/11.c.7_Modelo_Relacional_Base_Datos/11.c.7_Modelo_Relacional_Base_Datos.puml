@@ -1,5 +1,6 @@
 @startuml
 
+scale 2.0
 hide circle
 
 entity Usuario {
