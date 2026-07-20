@@ -46,6 +46,13 @@ export interface CreatePrestadorData {
   } | null;
   calificacionPromedio?: number;
   cantidadResenas?: number;
+  /**
+   * App-owned publish flag. A freshly registered prestador has NO visible
+   * servicios yet, so registration sets this `false` — the prestador becomes
+   * searchable only after publishing a service. Defaults to `false` when
+   * omitted.
+   */
+  tieneServiciosPublicados?: boolean;
 }
 
 /**

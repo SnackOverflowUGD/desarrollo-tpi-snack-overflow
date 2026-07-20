@@ -144,6 +144,11 @@ export class RegistrationService {
         zonaCobertura,
         cuentaActiva: true,
         visible: providerStatus === ProviderStatus.HABILITADO,
+        // App-owned publish flag (RN-CAT-01): a newly registered prestador has
+        // zero visible servicios, so they are NOT searchable until they publish
+        // one via the self-service completion step. The application layer owns
+        // this flag; it is never derived at registration from the trade alone.
+        tieneServiciosPublicados: false,
         disponibilidadResumen: null,
         calificacionPromedio: 0,
         cantidadResenas: 0,

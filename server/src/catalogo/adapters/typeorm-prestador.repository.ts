@@ -167,10 +167,11 @@ export class TypeOrmPrestadorRepository implements IPrestadorRepository {
       zonaCobertura: data.zonaCobertura,
       localidad: data.localidad,
       cuentaActiva: data.cuentaActiva,
-      // The prestador registered with a trade, so they have published that
-      // service. Setting true makes them immediately searchable (the catalog
-      // filter requires tieneServiciosPublicados=true).
-      tieneServiciosPublicados: true,
+      // App-owned publish flag: a freshly registered prestador has no visible
+      // servicios yet, so they are NOT searchable until they publish one (the
+      // catalog filter requires tieneServiciosPublicados=true). Registration
+      // passes `false`; the value is honored here (defaulting to false).
+      tieneServiciosPublicados: data.tieneServiciosPublicados ?? false,
       visible: data.visible,
       disponibilidadResumen: data.disponibilidadResumen ?? null,
     });
