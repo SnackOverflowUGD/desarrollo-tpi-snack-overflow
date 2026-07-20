@@ -28,6 +28,8 @@ export default defineConfig({
         'lib/server/backend-fetch.ts',
         'lib/api/prestador-me.ts',
         'lib/validation/perfil.ts',
+        'lib/validation/servicio.ts',
+        'lib/cuenta/onboarding.ts',
       ],
     },
   },

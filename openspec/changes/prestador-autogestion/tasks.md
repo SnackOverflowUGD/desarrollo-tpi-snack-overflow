@@ -50,9 +50,9 @@ All 5 slices fit the 400-line budget. Slices 3-5 are tight; if e2e/playwright fi
 
 ## Slice 5 [client] — Servicios CRUD + Onboarding (PSM-REQ-05..08, ONBOARDING-REQ-01)
 
-- [ ] 5.1 [client] Extend `client/lib/api/prestador-me.ts` with servicio create/update/softDelete result mappers
-- [ ] 5.2 [client] Create route handlers `client/app/api/prestadores/me/servicios/route.ts` (POST) + `servicios/[id]/route.ts` (PATCH/DELETE)
-- [ ] 5.3 [client] Create `client/app/(protegido)/cuenta/servicios/page.tsx`: list (incl. hidden) + create/edit forms + soft-delete UX (confirm, shows as hidden/re-publishable)
-- [ ] 5.4 [client] Create `client/components/cuentas/onboarding/*` + registro-form redirect to `cuenta/perfil?onboarding=1` (non-mandatory completion step)
-- [ ] 5.5 [client] RTL/vitest: servicios manager CRUD + soft-delete UX; onboarding step optional/skippable
-- [ ] 5.6 [client] Playwright flow: register → complete profile → publish first servicio → appears in `/catalogo/prestadores?oficio=Electricista&ubicacion=Posadas` (ESC-LOCALIDAD-08)
+- [x] 5.1 [client] Extend `client/lib/api/prestador-me.ts` with servicio create/update/softDelete result mappers (crearServicio 201, actualizarServicio 200/404, eliminarServicio 204; ownership 404, never throws 4xx)
+- [x] 5.2 [client] Create route handlers `client/app/api/prestadores/me/servicios/route.ts` (POST) + `servicios/[id]/route.ts` (PATCH/DELETE, 204 no-body) over `backendFetch`
+- [x] 5.3 [client] Create `client/app/(protegido)/cuenta/servicios/page.tsx` (Server Component) + `components/cuentas/servicios/{servicios-manager,servicio-form}.tsx`: list (incl. hidden, publish/hide toggle) + create/edit forms + soft-delete (archivar) confirm UX (re-publishable)
+- [x] 5.4 [client] Create `client/components/cuentas/onboarding/onboarding-perfil.tsx` + `lib/cuenta/onboarding.ts` (postRegistroRedirect) + registro-form redirect (active prestador → `/login?next=/cuenta/perfil?onboarding=1`, non-mandatory/skippable); added `Mis servicios` nav link
+- [x] 5.5 [client] vitest (pure-logic, project's node-env pyramid — no RTL harness): `servicio-schema.test.ts` (price range min<=max, ESC-PSM-10) + `servicio-api.test.ts` (CRUD + soft-delete result mapping) + `onboarding.test.ts` (redirect logic; optional/skippable)
+- [x] 5.6 [client] Playwright `e2e/servicios.spec.ts`: proxy guards (anon→login), BFF cookie→Bearer probes, token-never-leaks, + full register→login→complete profile→publish→appears in `/catalogo/prestadores?oficio=Carpintero&ubicacion=Posadas` (ESC-LOCALIDAD-08), skips gracefully when backend:3000 unreachable

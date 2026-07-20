@@ -58,6 +58,11 @@ export function navLinksFor(session: SessionState, copy: NavCopy): NavLink[] {
         href: "/cuenta/perfil",
         label: copy.miPerfil,
       },
+      {
+        key: "mis-servicios",
+        href: "/cuenta/servicios",
+        label: copy.misServicios,
+      },
     ];
   }
 

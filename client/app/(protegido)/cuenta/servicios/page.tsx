@@ -4,30 +4,31 @@ import { redirect } from "next/navigation";
 import { copy } from "@/lib/copy/es-AR";
 import { backendFetch } from "@/lib/server/backend-fetch";
 import type { MiPerfil } from "@/lib/api/prestador-me";
-import { PerfilForm } from "@/components/cuentas/perfil/perfil-form";
+import { ServiciosManager } from "@/components/cuentas/servicios/servicios-manager";
 import { OnboardingPerfil } from "@/components/cuentas/onboarding/onboarding-perfil";
 import { Alert } from "@/components/ui/alert";
 
 export const metadata: Metadata = {
-  title: `${copy.cuenta.perfil.title} · ${copy.app.title}`,
+  title: `${copy.cuenta.servicios.title} · ${copy.app.title}`,
   description: copy.app.description,
 };
 
 // Reads the session cookie server-side — never prerender it.
 export const dynamic = "force-dynamic";
 
-const PERFIL_PATH = "/cuenta/perfil";
+const SERVICIOS_PATH = "/cuenta/servicios";
 
 /**
- * Prestador profile-edit page (Server Component, PSM-REQ-01/02). Loads the
- * profile server-side via `backendFetch('/prestadores/me')` (cookie→Bearer),
- * then hands it to the interactive <PerfilForm/>. A cliente/administrador has no
- * prestador profile → backend 403 → send them to their own area.
+ * Prestador servicios manager page (Server Component, PSM-REQ-05..08). Loads the
+ * profile server-side via `backendFetch('/prestadores/me')` (which carries ALL
+ * servicios, including hidden ones), then hands the list to the interactive
+ * <ServiciosManager/>. A cliente/administrador has no prestador profile →
+ * backend 403 → bounce to their own area.
  *
- * `?onboarding=1` (set by the post-registration redirect) shows a non-mandatory
- * "completá tu perfil" banner guiding the new prestador to publish a service.
+ * `?onboarding=1` (post-registration step) shows the non-mandatory onboarding
+ * panel guiding the new prestador to publish their first servicio.
  */
-export default async function PerfilPage({
+export default async function ServiciosPage({
   searchParams,
 }: {
   searchParams: Promise<{ onboarding?: string }>;
@@ -42,22 +43,21 @@ export default async function PerfilPage({
     return (
       <PageShell>
         <Alert variant="error" role="alert">
-          {copy.cuenta.perfil.errorGuardar}
+          {copy.cuenta.servicios.errorAccion}
         </Alert>
       </PageShell>
     );
   }
 
   if (result.unauthorized) {
-    redirect(`/login?next=${PERFIL_PATH}`);
+    redirect(`/login?next=${SERVICIOS_PATH}`);
   }
 
   const { response } = result;
   if (response.status === 401) {
-    redirect(`/login?next=${PERFIL_PATH}`);
+    redirect(`/login?next=${SERVICIOS_PATH}`);
   }
   if (response.status === 403) {
-    // A cliente reached here — bounce to their own contrataciones area.
     redirect("/cuenta/contrataciones");
   }
 
@@ -65,7 +65,7 @@ export default async function PerfilPage({
     return (
       <PageShell>
         <Alert variant="error" role="alert">
-          {copy.cuenta.perfil.errorGuardar}
+          {copy.cuenta.servicios.errorAccion}
         </Alert>
       </PageShell>
     );
@@ -78,7 +78,7 @@ export default async function PerfilPage({
     return (
       <PageShell>
         <Alert variant="error" role="alert">
-          {copy.cuenta.perfil.errorGuardar}
+          {copy.cuenta.servicios.errorAccion}
         </Alert>
       </PageShell>
     );
@@ -86,8 +86,8 @@ export default async function PerfilPage({
 
   return (
     <PageShell>
-      {isOnboarding && <OnboardingPerfil variant="perfil" />}
-      <PerfilForm perfil={perfil} />
+      {isOnboarding && <OnboardingPerfil variant="servicios" />}
+      <ServiciosManager servicios={perfil.servicios} />
     </PageShell>
   );
 }
@@ -97,10 +97,10 @@ function PageShell({ children }: { children: React.ReactNode }) {
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-8">
       <header className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold text-foreground">
-          {copy.cuenta.perfil.title}
+          {copy.cuenta.servicios.title}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {copy.cuenta.perfil.subtitle}
+          {copy.cuenta.servicios.subtitle}
         </p>
       </header>
       {children}

@@ -26,6 +26,7 @@ import { copy } from "@/lib/copy/es-AR";
 import { TRADES, isRegulatedTrade } from "@/lib/trades";
 import { UBICACIONES } from "@/lib/catalogo/ubicaciones";
 import { registerUser, type RegisterPayload } from "@/lib/api/auth";
+import { postRegistroRedirect } from "@/lib/cuenta/onboarding";
 import {
   registroSchema,
   registroDefaults,
@@ -109,7 +110,7 @@ export function RegistroForm() {
 
     if (result.ok) {
       setSubmitted(true);
-      const { providerStatus, message } = result.data;
+      const { role: registeredRole, providerStatus, message } = result.data;
 
       if (providerStatus === "pendiente_habilitacion") {
         // Surface the backend message in-screen (not just a toast) before redirect.
@@ -119,7 +120,10 @@ export function RegistroForm() {
         toast.success(copy.registro.successToast);
       }
 
-      router.push(LOGIN_PATH);
+      // A newly registered ACTIVE prestador is guided (after login) to the
+      // non-mandatory "completá tu perfil" onboarding step (ONBOARDING-REQ-01);
+      // clientes and pending prestadores just land on /login.
+      router.push(postRegistroRedirect(registeredRole, providerStatus));
       return;
     }
 
