@@ -46,6 +46,13 @@ DEMO_PASSWORD="demo1234"
 
 CLIENTE_EMAIL="demo.cliente@${DEMO_DOMAIN}"
 
+# Extra clientes (PoC): more cliente accounts so demos aren't limited to one.
+# These are plain clientes (no catalog rows). Format: LOCALPART|NOMBRE|APELLIDO
+CLIENTES_EXTRA=(
+  "demo.cliente.ana|Ana|Torres"
+  "demo.cliente.pablo|Pablo|Giménez"
+)
+
 # Providers: KEY|EMAIL_LOCALPART|NOMBRE|APELLIDO|TRADE(lowercase for register)|OFICIO(categoria,exact match for search)|LOCALIDAD|CALIFICACION|DESC
 # TRADE is the lowercase register value; OFICIO is the catalog categoria the search matches.
 PRESTADORES=(
@@ -122,6 +129,10 @@ psql() {
 # ── --print short-circuit ───────────────────────────────────────────────────────
 if [[ "${1:-}" == "--print" ]]; then
   echo "CLIENTE: $CLIENTE_EMAIL / $DEMO_PASSWORD"
+  for c in "${CLIENTES_EXTRA[@]}"; do
+    IFS='|' read -r local nombre apellido <<<"$c"
+    echo "CLIENTE: ${local}@${DEMO_DOMAIN} / $DEMO_PASSWORD"
+  done
   for p in "${PRESTADORES[@]}"; do
     IFS='|' read -r key local nombre apellido trade oficio localidad calif desc <<<"$p"
     echo "PRESTADOR ($oficio @ $localidad): ${local}@${DEMO_DOMAIN} / $DEMO_PASSWORD"
@@ -159,13 +170,15 @@ DELETE FROM users WHERE email LIKE '%@${DEMO_DOMAIN}';
 
 # ── Helpers ──────────────────────────────────────────────────────────────────────
 register() {
-  # $1 name, $2 lastName, $3 email, $4 password, $5 role, [$6 trade]
+  # $1 name, $2 lastName, $3 email, $4 password, $5 role, [$6 trade], [$7 localidad]
+  # Since the registro-localidad feature, POST /auth/register auto-creates the
+  # catalog `prestadores` row and REQUIRES localidad for the prestador role.
   local payload resp status
-  if [[ -n "${6:-}" ]]; then
-    payload=$(printf '{"name":"%s","lastName":"%s","email":"%s","phone":"+5493764000000","password":"%s","role":"%s","trade":"%s"}' "$1" "$2" "$3" "$4" "$5" "$6")
-  else
-    payload=$(printf '{"name":"%s","lastName":"%s","email":"%s","phone":"+5493764000000","password":"%s","role":"%s"}' "$1" "$2" "$3" "$4" "$5")
-  fi
+  payload=$(printf '{"name":"%s","lastName":"%s","email":"%s","phone":"+5493764000000","password":"%s","role":"%s"' \
+    "$1" "$2" "$3" "$4" "$5")
+  if [[ -n "${6:-}" ]]; then payload+=$(printf ',"trade":"%s"' "$6"); fi
+  if [[ -n "${7:-}" ]]; then payload+=$(printf ',"localidad":"%s"' "$7"); fi
+  payload+='}'
   resp=$(curl -s -w '\n%{http_code}' -X POST "$BACKEND_URL/auth/register" \
     -H 'Content-Type: application/json' -d "$payload")
   status=$(printf '%s' "$resp" | tail -n1)
@@ -268,13 +281,25 @@ CLIENTE_ID=$(psql -c "SELECT id FROM users WHERE email = '$CLIENTE_EMAIL';" | tr
 CLIENTE_TOKEN=$(login "$CLIENTE_EMAIL" "$DEMO_PASSWORD")
 echo "    cliente id: $CLIENTE_ID"
 
+# Extra clientes (PoC): registered via API so they get a valid argon2 hash and
+# can log in. No catalog rows — they are consumers only.
+echo "==> Register extra clientes"
+for c in "${CLIENTES_EXTRA[@]}"; do
+  IFS='|' read -r local nombre apellido <<<"$c"
+  email="${local}@${DEMO_DOMAIN}"
+  register "$nombre" "$apellido" "$email" "$DEMO_PASSWORD" "cliente"
+  echo "    + cliente -> $email"
+done
+
 # ── Register prestadores + insert catalog rows ───────────────────────────────────
 declare -A PREST_ID PREST_EMAIL PREST_OFICIO PREST_LOCALIDAD
 echo "==> Register prestadores + insert catalog/servicios rows"
 for p in "${PRESTADORES[@]}"; do
   IFS='|' read -r key local nombre apellido trade oficio localidad calif desc <<<"$p"
   email="${local}@${DEMO_DOMAIN}"
-  register "$nombre" "$apellido" "$email" "$DEMO_PASSWORD" "prestador" "$trade"
+  # register auto-creates the catalog `prestadores` row (16.5km coverage circle,
+  # categoria from the trade map, calificacion=0, tiene_servicios_publicados=false).
+  register "$nombre" "$apellido" "$email" "$DEMO_PASSWORD" "prestador" "$trade" "$localidad"
   pid=$(psql -c "SELECT id FROM users WHERE email = '$email';" | tr -d '[:space:]')
   if [[ -z "$pid" ]]; then echo "!! could not resolve id for $email" >&2; exit 1; fi
   PREST_ID[$key]="$pid"
@@ -282,26 +307,17 @@ for p in "${PRESTADORES[@]}"; do
   PREST_OFICIO[$key]="$oficio"
   PREST_LOCALIDAD[$key]="$localidad"
 
-  zona=$(zona_cobertura "$localidad")
-  # categoria = OFICIO (exact, capitalized) so GET ?oficio=<OFICIO> matches.
+  # UPDATE the auto-created row: varied demo rating, publish services, and force
+  # visible=true (regulated trades like "Gasista matriculado" start PENDIENTE →
+  # visible=false). Then add a servicios row for the profile. PoC only.
   psql -c "
-INSERT INTO prestadores (
-  id, nombre_completo, oficios, categoria,
-  calificacion_promedio, cantidad_resenas,
-  zona_cobertura, localidad,
-  cuenta_activa, tiene_servicios_publicados, visible,
-  disponibilidad_resumen
-) VALUES (
-  '$pid',
-  '$nombre $apellido',
-  '$oficio',
-  '$oficio',
-  $calif, $((RANDOM % 40 + 5)),
-  '$zona'::jsonb,
-  '$localidad',
-  true, true, true,
-  '{\"estado\":\"disponible_esta_semana\",\"franjasDisponiblesProximos7Dias\":8}'::jsonb
-);
+UPDATE prestadores SET
+  calificacion_promedio = $calif,
+  cantidad_resenas = $((RANDOM % 40 + 5)),
+  tiene_servicios_publicados = true,
+  visible = true,
+  disponibilidad_resumen = '{\"estado\":\"disponible_esta_semana\",\"franjasDisponiblesProximos7Dias\":8}'::jsonb
+WHERE id = '$pid';
 INSERT INTO servicios (
   id, prestador_id, categoria, descripcion,
   rango_precio_min, rango_precio_max, visible
@@ -390,8 +406,14 @@ cat <<EOF
 
   CREDENCIALES (password para todos: $DEMO_PASSWORD)
 
-  Cliente:
+  Clientes:
     $CLIENTE_EMAIL  /  $DEMO_PASSWORD   (id $CLIENTE_ID)
+EOF
+for c in "${CLIENTES_EXTRA[@]}"; do
+  IFS='|' read -r local nombre apellido <<<"$c"
+  printf '    %s  /  %s\n' "${local}@${DEMO_DOMAIN}" "$DEMO_PASSWORD"
+done
+cat <<EOF
 
   Prestadores:
 EOF
