@@ -14,7 +14,7 @@ import type {
 } from "@/lib/api/contrataciones";
 import type { RolSeguimiento } from "@/lib/api/acciones-contratacion";
 import { EstadoBadge } from "@/components/cuentas/bandeja/estado-badge";
-import { AccionesContratacion } from "@/components/cuentas/seguimiento/acciones-contratacion";
+import { AccionesContratacion } from "@/components/cuentas/acciones/acciones-contratacion";
 import { LineaTiempoEstados } from "@/components/cuentas/seguimiento/linea-tiempo-estados";
 
 function DatoLinea({ label, valor }: { label: string; valor: string }) {
@@ -131,6 +131,7 @@ export function ContratacionCard({
         contratacionId={item.id}
         rol={rol}
         estado={item.estado}
+        nextPath="/cuenta/contrataciones"
       />
 
       <LineaTiempoEstados contratacionId={item.id} />
