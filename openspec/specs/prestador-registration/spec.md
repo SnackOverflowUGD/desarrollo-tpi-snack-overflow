@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Prestadores who register via the UI are immediately visible in catalog search by having their `prestadores` catalog row created during registration, with their selected `localidad` mapped to a `zona_cobertura` polygon.
+Prestadores who register via the UI get their `prestadores` catalog row created during registration, with their selected `localidad` mapped to a `zona_cobertura` polygon. A freshly registered prestador is a valid account but becomes visible in catalog search only after publishing at least one visible service (`tieneServiciosPublicados=true`); registration itself no longer forces service data.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ Prestadores who register via the UI are immediately visible in catalog search by
 
 The system **SHALL** present a required `localidad` Select field when the registering user selects role "prestador".
 
-#### Scenario: ESC-LOCALIDAD-01 — Prestador registers with localidad and appears in search
+#### Scenario: ESC-LOCALIDAD-01 — Prestador registers with localidad; searchable only after publishing
 
 - GIVEN a prestador completes registration with role "prestador", trade "electricista", and localidad "Posadas"
 - WHEN registration succeeds
@@ -18,7 +18,8 @@ The system **SHALL** present a required `localidad` Select field when the regist
 - AND the Prestador row has `categoria` = "Electricista" (capitalized label)
 - AND the Prestador row has `localidad` = "Posadas"
 - AND the Prestador row has `zona_cobertura` as a GeoJSON polygon generated from Posadas coordinates
-- AND the prestador appears in `/catalogo/prestadores?oficio=Electricista&ubicacion=Posadas` search results
+- AND the Prestador row has `tieneServiciosPublicados=false` and does NOT yet appear in search
+- AND the prestador appears in `/catalogo/prestadores?oficio=Electricista&ubicacion=Posadas` only AFTER publishing at least one visible servicio
 
 #### Scenario: ESC-LOCALIDAD-02 — Prestador selects city and correct polygon is generated
 
@@ -47,7 +48,7 @@ The system **SHALL** restrict `localidad` options to the 17 known Misiones citie
 - GIVEN a prestador registers with trade "gasista" (regulated) and localidad "Posadas"
 - WHEN registration completes
 - THEN the Prestador row has `providerStatus` = "pendiente_habilitacion"
-- AND the prestador is visible in catalog search (status does not hide from catalog)
+- AND `providerStatus` alone does NOT hide the prestador from catalog once they have published services (searchability is still gated by `tieneServiciosPublicados`)
 
 ### Requirement: LOCALIDAD-REQ-04
 
@@ -83,3 +84,22 @@ The system **SHALL** create User and Prestador rows atomically — if Prestador 
 - THEN the User row is NOT created (transaction rolled back)
 - AND the client receives an error response
 - AND no orphan User row exists in the database
+
+### Requirement: ONBOARDING-REQ-01 — Post-registration profile completion
+
+Registration **MUST NOT** force service data. After a prestador registers, the system **MUST** offer a separate "complete your profile" step (reusing the self-management endpoints) where they capture a first servicio (price range + `descripcion`) and availability so they become searchable. Completing this step is **NOT** required to finish registration.
+
+#### Scenario: ESC-LOCALIDAD-07 — Newly registered prestador is valid but not searchable
+
+- GIVEN a prestador completes registration with role "prestador", trade "electricista", and localidad "Posadas"
+- WHEN registration succeeds and no servicio has been published yet
+- THEN the Prestador row exists with `tieneServiciosPublicados=false`
+- AND the prestador does NOT appear in `/catalogo/prestadores` search results
+- AND the prestador can authenticate and open the profile-completion flow
+
+#### Scenario: ESC-LOCALIDAD-08 — Completing the profile makes the prestador searchable
+
+- GIVEN a registered prestador with `tieneServiciosPublicados=false`
+- WHEN they complete the profile step by publishing a first visible servicio (valid price range) and setting availability
+- THEN `tieneServiciosPublicados=true`
+- AND the prestador appears in `/catalogo/prestadores?oficio=Electricista&ubicacion=Posadas` results
