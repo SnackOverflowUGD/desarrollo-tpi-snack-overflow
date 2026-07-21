@@ -11,10 +11,7 @@
  *  - invalid price range (min>max) → 400 (ESC-PSM-10).
  *  - ownership guard → 404 on another prestador's servicio (ESC-PSM-14/16).
  */
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrestadorAutogestionService } from './prestador-autogestion.service.js';
 import { Prestador } from '../domain/prestador.entity.js';
 import { Servicio } from '../domain/servicio.entity.js';

@@ -23,10 +23,7 @@ import { normalizeOficios } from '../domain/oficios.util.js';
 import { ActualizarPerfilDto } from '../dto/actualizar-perfil.dto.js';
 import { CrearServicioDto } from '../dto/crear-servicio.dto.js';
 import { ActualizarServicioDto } from '../dto/actualizar-servicio.dto.js';
-import {
-  MiPerfilDto,
-  MiPerfilServicioDto,
-} from '../dto/mi-perfil.dto.js';
+import { MiPerfilDto, MiPerfilServicioDto } from '../dto/mi-perfil.dto.js';
 
 /**
  * Prestador self-management application service.
@@ -78,7 +75,8 @@ export class PrestadorAutogestionService {
     }
 
     const patch: UpdatePrestadorData = {};
-    if (dto.oficios !== undefined) patch.oficios = normalizeOficios(dto.oficios);
+    if (dto.oficios !== undefined)
+      patch.oficios = normalizeOficios(dto.oficios);
     if (dto.categoria !== undefined) patch.categoria = dto.categoria;
     if (dto.visible !== undefined) patch.visible = dto.visible;
     if (dto.disponibilidadResumen !== undefined) {

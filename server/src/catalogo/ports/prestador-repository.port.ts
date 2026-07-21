@@ -33,7 +33,9 @@ export interface CreatePrestadorData {
   oficios: string[];
   categoria: string;
   localidad: string;
-  zonaCobertura: ReturnType<import('../domain/cobertura-zona.value.js').CoberturaZona['toJSON']>;
+  zonaCobertura: ReturnType<
+    import('../domain/cobertura-zona.value.js').CoberturaZona['toJSON']
+  >;
   cuentaActiva: boolean;
   visible: boolean;
   disponibilidadResumen?: {
