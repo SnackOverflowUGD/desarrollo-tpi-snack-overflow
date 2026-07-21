@@ -211,6 +211,18 @@ describe('PrestadorAutogestionService — profile update', () => {
     expect(patch.visible).toBe(false);
   });
 
+  it('normalizes oficios (case-insensitive dedup) before persisting', async () => {
+    const { service, prestadorRepo } = setup();
+    prestadorRepo.findById.mockResolvedValue(
+      makePrestador({ localidad: 'Posadas' }),
+    );
+
+    await service.actualizarPerfil(SUB, { oficios: ['gasista', 'Gasista'] });
+
+    const [, patch] = prestadorRepo.update.mock.calls[0];
+    expect(patch.oficios).toEqual(['gasista']);
+  });
+
   it('ESC-PSM-06: unknown localidad is rejected with 400 and nothing is persisted', async () => {
     const { service, prestadorRepo } = setup();
     prestadorRepo.findById.mockResolvedValue(

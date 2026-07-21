@@ -125,6 +125,8 @@ export class RegistrationService {
 
       // Build categoria from trade value using label map (search does
       // exact match against the TRADE label, e.g. "Albañil" not "albanil").
+      // BOTH `oficios` and `categoria` store this display label so the two
+      // stay consistent and the catalog search (`categoria = :oficio`) matches.
       const categoria = TRADE_CATEGORIA[dto.trade.toLowerCase()] ?? dto.trade;
 
       // Generate zona_cobertura as 16.5km circle around localidad
@@ -138,7 +140,7 @@ export class RegistrationService {
       prestadorData = {
         id: '', // Will be set to user.id after user creation
         nombreCompleto: `${dto.name} ${dto.lastName}`,
-        oficios: [dto.trade],
+        oficios: [categoria],
         categoria,
         localidad: dto.localidad,
         zonaCobertura,
