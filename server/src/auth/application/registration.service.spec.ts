@@ -186,7 +186,7 @@ describe('RegistrationService.register()', () => {
 
   // ESC-03: prestador + regulated trade → pendiente_habilitacion
   it('ESC-03: prestador + regulated trade → providerStatus=pendiente_habilitacion', async () => {
-    const { service, userRepo, regulatedTradeRepo } = makeMocks();
+    const { service, userRepo, regulatedTradeRepo, prestadorRepo } = makeMocks();
     userRepo.findByEmail.mockResolvedValue(null);
     regulatedTradeRepo.findByTradeName.mockResolvedValue(makeRegulatedTrade()); // IS regulated
     const createdUser = makeUser({
@@ -210,6 +210,15 @@ describe('RegistrationService.register()', () => {
     );
 
     expect(regulatedTradeRepo.findByTradeName).toHaveBeenCalledWith('gasista');
+
+    // oficios stores the DISPLAY LABEL, consistent with categoria (both derived
+    // from TRADE_CATEGORIA), so the two never drift and the catalog search
+    // (`categoria = :oficio`) matches. Guards against the "gasista" vs "Gasista"
+    // duplicate-chip regression.
+    const [prestadorData] = prestadorRepo.create.mock.calls[0];
+    expect(prestadorData.categoria).toBe('Gasista');
+    expect(prestadorData.oficios).toEqual(['Gasista']);
+    expect(prestadorData.oficios[0]).toBe(prestadorData.categoria);
   });
 
   // ESC-09 (RN-REG-03): prestador without trade → 422 UnprocessableEntityException
