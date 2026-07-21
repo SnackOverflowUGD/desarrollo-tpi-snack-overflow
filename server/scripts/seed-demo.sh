@@ -369,6 +369,16 @@ transition "$CLIENTE_TOKEN"   "$C_ENCURSO" "confirm"
 transition "$CERRAJERO_TOKEN" "$C_ENCURSO" "start"
 echo "    en_curso    : $C_ENCURSO (cerrajero)"
 
+# 5) CONFIRMADA — cliente confirms pintor's proposal but the job has NOT started yet,
+# so the prestador (pintor) sees the "Iniciar" action in the bandeja Activas tab.
+C_CONFIRMADA=$(crear_contratacion "$CLIENTE_TOKEN" "${PREST_ID[pintor]}" \
+  "Pintar el frente de la casa, dos manos de látex." "Calle Bolívar 500, Garupá, Misiones, Argentina")
+PINTOR_TOKEN=$(login "${PREST_EMAIL[pintor]}" "$DEMO_PASSWORD")
+transition "$PINTOR_TOKEN"  "$C_CONFIRMADA" "proposal" \
+  "$(printf '{"fecha":"%s","franja":"08:00-10:00","precioEstimado":30000}' "$FECHA_SOLICITUD")"
+transition "$CLIENTE_TOKEN" "$C_CONFIRMADA" "confirm"
+echo "    confirmada  : $C_CONFIRMADA (pintor)"
+
 # ── Verify: search returns a seeded provider ─────────────────────────────────────
 echo "==> Verify search GET /catalogo/prestadores?oficio=Electricista&ubicacion=Posadas..."
 SEARCH_JSON=$(curl -s -G "$BACKEND_URL/catalogo/prestadores" \
@@ -428,6 +438,7 @@ cat <<EOF
     presupuestada -> $(estado_de "$C_PRESUPUESTADA")  (plomero)       id $C_PRESUPUESTADA
     finalizada    -> $(estado_de "$C_FINALIZADA")    (carpintero)    id $C_FINALIZADA
     en_curso      -> $(estado_de "$C_ENCURSO")      (cerrajero)     id $C_ENCURSO
+    confirmada    -> $(estado_de "$C_CONFIRMADA")   (pintor)        id $C_CONFIRMADA
 
   VERIFICACION
     Búsqueda Electricista/Posadas: encontrado (resultados: $SEARCH_HITS)
