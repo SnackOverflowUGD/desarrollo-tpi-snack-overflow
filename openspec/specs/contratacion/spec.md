@@ -47,6 +47,17 @@ La gestión del grafo de estados, su validación y el historial de cambios **NO*
 | RN-CON-09 | La propuesta requiere: **fecha ≥ hoy, franja, precioEstimado > 0**. |
 | RN-CON-10 | El **rechazo** no requiere campos adicionales; se procesa con la sola intención → *cancelada*. |
 
+### Reglas de negocio — Acciones de ciclo de vida (prestador, UI)
+
+| ID | Regla |
+|----|-------|
+| RN-CON-11 | El sistema *debe* exponer las acciones `iniciar`, `finalizar` y `cancelar` para el prestador desde una superficie de UI **alcanzable** dentro de su flujo de contratación existente (p. ej. bandeja "Activas"), para las contrataciones donde el prestador está autorizado según la máquina de estados del backend existente. |
+| RN-CON-12 | El sistema *debe* renderizar cada acción de ciclo de vida solo para el par (rol, estado) que el backend autoriza, y **no debe** renderizar ninguna acción para un estado terminal (`finalizada`, `cancelada`) ni para una combinación rol/estado no autorizada. |
+| RN-CON-13 | El sistema *debe* consumir los métodos existentes `iniciar`, `finalizar` y `cancelar` de `client/lib/api/contrataciones.ts` **sin** modificar rutas del servidor, contratos de request/response ni reglas de autorización. |
+| RN-CON-14 | El sistema *debe* evitar un segundo envío de la misma acción de ciclo de vida mientras una request previa de esa acción está en curso (guard de doble submit). |
+| RN-CON-15 | SI el backend rechaza una transición porque el estado de la contratación cambió desde la última carga de la UI (HTTP 409), ENTONCES la UI *debe* refrescar la contratación, re-renderizar solo las acciones válidas para el estado corregido, e informar al prestador que la acción no pudo aplicarse. |
+| RN-CON-16 | Las acciones de seguimiento del cliente (`acciones-contratacion.tsx`) *deben* seguir renderizándose y comportándose de forma idéntica para el cliente tras este cambio (regresión). |
+
 ## Escenarios (Given-When-Then)
 
 ### Solicitud (UC07)
@@ -137,6 +148,78 @@ La gestión del grafo de estados, su validación y el historial de cambios **NO*
 - **Dado** un prestador autenticado destino
 - **Cuando** envía propuesta con fecha anterior a hoy
 - **Entonces** el sistema rechaza con HTTP 422
+
+### Acciones de ciclo de vida del prestador (UI)
+
+#### ESC-15: Prestador inicia (confirmada → en_curso)
+
+- **Dado** un prestador que visualiza una contratación asignada en estado `confirmada`
+- **Cuando** selecciona la acción alcanzable "Iniciar"
+- **Entonces** la UI invoca el método API `iniciar` existente
+- **Y** en caso de éxito la contratación refleja el estado `en_curso`
+
+#### ESC-16: Prestador finaliza (en_curso → finalizada)
+
+- **Dado** un prestador que visualiza una contratación asignada en estado `en_curso`
+- **Cuando** selecciona la acción alcanzable "Finalizar"
+- **Entonces** la UI invoca el método API `finalizar` existente
+- **Y** en caso de éxito la contratación refleja el estado `finalizada`
+
+#### ESC-17: Prestador cancela desde confirmada (paridad con cliente)
+
+- **Dado** un prestador que visualiza una contratación no terminal (p. ej. `confirmada`) como participante
+- **Cuando** selecciona "Cancelar"
+- **Entonces** la UI invoca el método API `cancelar` existente
+- **Y** en caso de éxito la contratación refleja el estado `cancelada`
+
+#### ESC-18: Prestador cancela desde en_curso
+
+- **Dado** un prestador que visualiza una contratación asignada en estado `en_curso`
+- **Cuando** selecciona "Cancelar"
+- **Entonces** la UI invoca el método API `cancelar` existente y refleja `cancelada` en caso de éxito
+
+#### ESC-19: Sin acciones en finalizada
+
+- **Dado** un prestador que visualiza una contratación en estado `finalizada`
+- **Cuando** se renderiza el área de acciones
+- **Entonces** no se muestra ningún botón de acción de ciclo de vida
+
+#### ESC-20: Sin acciones en cancelada
+
+- **Dado** un prestador que visualiza una contratación en estado `cancelada`
+- **Cuando** se renderiza el área de acciones
+- **Entonces** no se muestra ningún botón de acción de ciclo de vida
+
+#### ESC-21: Intento no autorizado manejado con gracia
+
+- **Dado** que el backend rechaza una acción con 403 o 404 (el prestador no es el participante asignado, o hay discrepancia de rol)
+- **Cuando** se recibe la respuesta
+- **Entonces** la UI muestra un error inteligible y no aplica la transición de forma optimista
+
+#### ESC-22: La acción de UI usa el contrato de endpoint existente
+
+- **Dado** que un prestador dispara iniciar/finalizar/cancelar desde la nueva superficie alcanzable
+- **Cuando** se envía la request
+- **Entonces** coincide con el endpoint, método y payload ya usados por el componente de seguimiento
+- **Y** no se introduce ninguna ruta ni regla de autorización nueva en el servidor
+
+#### ESC-23: Doble click emite una sola request
+
+- **Dado** que un prestador dispara "Iniciar" en una contratación
+- **Cuando** hace click en la misma acción de nuevo antes de que la primera request resuelva
+- **Entonces** solo se envía una request y el control muestra un estado deshabilitado/pendiente hasta la resolución
+
+#### ESC-24: Estado obsoleto corregido tras 409
+
+- **Dado** que la UI de un prestador muestra una contratación como `confirmada` (obsoleto) mientras el estado del backend ya cambió (p. ej. cancelada por el cliente)
+- **Cuando** el prestador dispara "Iniciar" y el backend retorna 409
+- **Entonces** la UI refresca y re-renderiza las acciones que coinciden con el estado actual
+
+#### ESC-25: Cliente seguimiento sin cambios (regresión)
+
+- **Dado** un cliente que visualiza su contratación en seguimiento
+- **Cuando** se despliegan los cambios del lado del prestador descritos arriba
+- **Entonces** el cliente ve las mismas acciones disponibles y el mismo comportamiento que antes del cambio
 
 ## Fuera de alcance
 

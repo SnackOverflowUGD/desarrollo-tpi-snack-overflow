@@ -30,12 +30,19 @@ El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenam
 
 | ID | Regla |
 |----|-------|
-| RN-CAT-01 | Solo se muestran prestadores con cuenta **activa** y al menos un servicio **publicado** en el catálogo. Prestadores suspendidos (RF-1.5) o sin servicios no aparecen en resultados. |
+| RN-CAT-01 | Solo se muestran prestadores con cuenta **activa**, perfil **visible** y al menos un servicio **publicado (visible)** en el catálogo. El flag `tieneServiciosPublicados` es **mantenido por la aplicación**: se recalcula dentro de la misma transacción cada vez que un servicio se publica, oculta o elimina (soft-delete) — ya no es un campo poblado solo por seed. Prestadores suspendidos (RF-1.5) o sin servicios publicados no aparecen en resultados. |
 | RN-CAT-02 | La coincidencia de zona de cobertura se determina por la relación entre la **ubicación del cliente** (coordenadas o localidad) y la **zona de cobertura configurada** por el prestador (UC06). Si el prestador no definió zona, se asume solo su localidad registrada. |
 | RN-CAT-03 | El ordenamiento por defecto de los resultados es **por calificación descendente** (más alto primero). A igual calificación, se ordena por **cantidad de reseñas** descendente. |
 | RN-CAT-04 | La **disponibilidad** reflejada en los resultados considera las franjas horarias configuradas por el prestador (UC06) **vigentes a la fecha de la consulta**, excluyendo períodos no disponibles y franjas ya reservadas con contrataciones en estado distinto de *finalizada* o *cancelada*. El ordenamiento por disponibilidad (cantidad de franjas libres en los próximos 7 días, DESC) SÍ está soportado; el **filtrado por una fecha específica NO está disponible** porque depende de la agenda real del prestador (UC06), aún no construida (ver PA-06). |
 | RN-CAT-06 | La **paginación** devuelve en `total` la cantidad **real** de prestadores que satisfacen TODOS los criterios (`cuenta activa` + `servicios publicados` + `visible` + `categoria` exacta + `calificación mínima` + zona de cobertura que contiene la ubicación), no la cantidad de elementos de la página actual. El filtro por zona de cobertura (point-in-polygon) se aplica sobre el conjunto completo de candidatos ANTES de recortar la página solicitada, de modo que cada página se llena correctamente y `total` permite calcular la cantidad de páginas. |
 | RN-CAT-05 | El perfil público del prestador muestra: nombre, oficio(s), calificación promedio, cantidad de reseñas, zona de cobertura, y lista de servicios publicados con descripción y rango de precios. No se muestra dirección particular, teléfono ni e-mail hasta que exista una contratación aceptada (UC21) entre el cliente y el prestador. |
+
+### Puertos de repositorio (autogestión de prestador)
+
+| ID | Regla |
+|----|-------|
+| REPO-PRESTADOR-UPDATE-01 | La interfaz `IPrestadorRepository` *deberá* exponer un método `update(id, data)` que persista ediciones de perfil (`oficios`/`categoria`, `localidad`, `zonaCobertura`, `disponibilidadResumen`, `visible`, `tieneServiciosPublicados`). Cuando cambia `localidad`, la `zonaCobertura` regenerada y el nuevo valor de `tieneServiciosPublicados` *deben* persistirse en la MISMA transacción que el resto de la actualización. |
+| REPO-SERVICIO-CRUD-01 | La interfaz `IServicioRepository` *deberá* exponer métodos `create`, `update` y `delete`. `delete` *debe* ser un soft-delete (fijar `visible=false`, conservando la fila), nunca una eliminación física. |
 
 ## Escenarios (Given-When-Then)
 
@@ -89,6 +96,34 @@ El caso de uso implementa el patrón **Strategy** para los algoritmos de ordenam
 - **Cuando** el cliente ingresa oficio, ubicación y aplica el filtro de **calificación mínima** y selecciona ordenamiento por distancia
 - **Entonces** el sistema aplica todos los filtros concurrentemente, ordena por distancia, y retorna solo los prestadores que cumplen todas las condiciones, con un `total` que refleja la cantidad real de coincidencias (RN-CAT-06)
 - **Nota:** el **filtro por fecha específica** fue retirado del alcance (ver PA-06). Los filtros combinados soportados son: oficio + ubicación (obligatorios) + calificación mínima (opcional), más los tres ordenamientos (calificación / distancia / disponibilidad).
+
+### ESC-09: El repositorio actualiza perfil + zona regenerada de forma atómica
+
+- **Dado** un prestador persistido y una actualización que cambia `localidad` y `disponibilidadResumen`
+- **Cuando** se invoca `repository.update(id, data)` dentro de una transacción
+- **Entonces** todos los campos modificados, incluyendo la `zonaCobertura` regenerada, se commitean juntos
+- **Y** una falla en cualquier campo revierte toda la actualización (sin estado parcial)
+
+### ESC-10: El repositorio crea y actualiza un servicio
+
+- **Dado** un `CreateServicioData` con `prestadorId`, `rangoPrecioMin`, `rangoPrecioMax`, `descripcion`, `visible`
+- **Cuando** se invoca `repository.create(data)` y luego `repository.update(id, changes)`
+- **Entonces** el servicio se persiste y luego refleja los campos actualizados
+- **Y** la entidad retornada tiene un `id` generado
+
+### ESC-11: El repositorio hace soft-delete de un servicio
+
+- **Dado** un servicio visible persistido
+- **Cuando** se invoca `repository.delete(id)`
+- **Entonces** la fila sigue existiendo con `visible=false`
+- **Y** ninguna fila se elimina físicamente de la tabla `servicios`
+
+### ESC-12: El flag de publicación alterna la searchability
+
+- **Dado** un prestador creado por la app con `tieneServiciosPublicados=false`
+- **Cuando** publica su primer servicio visible y luego oculta/soft-deletea su último servicio visible
+- **Entonces** `tieneServiciosPublicados` pasa a `true` en la primera publicación y a `false` tras ocultar el último
+- **Y** la inclusión en búsqueda sigue el flag en consecuencia (cada recálculo commiteado en la transacción de la mutación)
 
 ## Fuera de alcance
 
