@@ -81,9 +81,15 @@ function makeRepo(rows: Servicio[] = []) {
   const manager = makeManager(rows);
   const repo = {
     manager,
-    create: jest.fn((obj: Partial<Servicio>) => Object.assign(new Servicio(), obj)),
+    create: jest.fn((obj: Partial<Servicio>) =>
+      Object.assign(new Servicio(), obj),
+    ),
     find: jest.fn(
-      async ({ where }: { where: { prestadorId: string; visible?: boolean } }) =>
+      async ({
+        where,
+      }: {
+        where: { prestadorId: string; visible?: boolean };
+      }) =>
         rows.filter(
           (r) =>
             r.prestadorId === where.prestadorId &&
@@ -208,7 +214,9 @@ describe('TypeOrmServicioRepository.countVisibleByPrestadorId()', () => {
 
   it('reads through the QueryRunner manager when a tx is provided', async () => {
     const { adapter } = makeRepo([]);
-    const txRows = [makeServicio({ id: 's1', prestadorId: 'p1', visible: true })];
+    const txRows = [
+      makeServicio({ id: 's1', prestadorId: 'p1', visible: true }),
+    ];
     const qr = makeQueryRunner(txRows);
 
     expect(await adapter.countVisibleByPrestadorId('p1', qr)).toBe(1);

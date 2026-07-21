@@ -20,10 +20,7 @@ import { PrestadorAutogestionService } from './application/prestador-autogestion
 import { ActualizarPerfilDto } from './dto/actualizar-perfil.dto.js';
 import { CrearServicioDto } from './dto/crear-servicio.dto.js';
 import { ActualizarServicioDto } from './dto/actualizar-servicio.dto.js';
-import {
-  MiPerfilDto,
-  MiPerfilServicioDto,
-} from './dto/mi-perfil.dto.js';
+import { MiPerfilDto, MiPerfilServicioDto } from './dto/mi-perfil.dto.js';
 
 /**
  * Authenticated prestador self-management surface (PSM-REQ-01/02/09/10).
@@ -63,9 +60,7 @@ export class PrestadorController {
 
   @Get('me/servicios')
   @HttpCode(HttpStatus.OK)
-  async listMisServicios(
-    @Req() req: Request,
-  ): Promise<MiPerfilServicioDto[]> {
+  async listMisServicios(@Req() req: Request): Promise<MiPerfilServicioDto[]> {
     const user = this.requirePrestador(req);
     const perfil = await this.autogestionService.getMiPerfil(user.sub);
     return perfil.servicios;

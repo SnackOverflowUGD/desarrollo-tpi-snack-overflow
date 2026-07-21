@@ -35,6 +35,12 @@ import type { IContratacionRepository } from '../ports/contratacion-repository.p
 import type { IContratacionStateMachine } from '../ports/state-machine.port.js';
 import { ContratacionService } from './contratacion.service.js';
 
+// Booking date kept relative to "now" so the today-or-future validation in
+// ContratacionService never rots (previously hardcoded to a now-past date).
+const FECHA_FUTURA = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+
 // ---------------------------------------------------------------------------
 // In-memory ACID model (shared by the fake repos + fake state machine)
 // ---------------------------------------------------------------------------
@@ -318,7 +324,7 @@ function makeCreateDto(
   const dto = new CreateContratacionDto();
   dto.ubicacion = 'Av. Siempre Viva 123, Springfield';
   dto.prestadorId = 'prestador-uuid-1';
-  dto.fecha = '2026-06-20';
+  dto.fecha = FECHA_FUTURA;
   dto.franja = '08:00-09:00';
   dto.descripcion = 'Se rompió el caño de la cocina.';
   return Object.assign(dto, overrides);
@@ -330,7 +336,7 @@ function makeContratacion(overrides: Partial<Contratacion> = {}): Contratacion {
     ubicacion: 'Av. Siempre Viva 123, Springfield',
     prestadorId: 'prestador-uuid-1',
     clienteId: 'cliente-uuid-1',
-    fecha: '2026-06-20',
+    fecha: FECHA_FUTURA,
     franja: '08:00-09:00',
     descripcion: 'Se rompió el caño de la cocina.',
     estado: ContratacionEstado.SOLICITADA,
@@ -565,7 +571,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
 
     await service.sendProposal(
       'contratacion-uuid-1',
-      { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+      { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
       ParticipantRole.PRESTADOR,
     );
@@ -608,7 +614,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
 
     await service.sendProposal(
       created.id,
-      { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+      { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
       ParticipantRole.PRESTADOR,
     );
@@ -704,7 +710,7 @@ describe('ContratacionService — ACID atomicity (ADR-003)', () => {
 
     const result = await service.sendProposal(
       'contratacion-uuid-1',
-      { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+      { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
       ParticipantRole.PRESTADOR,
     );
@@ -912,7 +918,7 @@ describe('ContratacionService.sendProposal()', () => {
 
     const result = await service.sendProposal(
       'contratacion-uuid-1',
-      { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+      { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
       'prestador-uuid-1',
       ParticipantRole.PRESTADOR,
     );
@@ -931,7 +937,7 @@ describe('ContratacionService.sendProposal()', () => {
     await expect(
       service.sendProposal(
         'contratacion-uuid-1',
-        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+        { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
         'cliente-uuid-1',
         ParticipantRole.CLIENTE,
       ),
@@ -946,7 +952,7 @@ describe('ContratacionService.sendProposal()', () => {
     await expect(
       service.sendProposal(
         'contratacion-uuid-1',
-        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+        { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
         ParticipantRole.PRESTADOR,
       ),
@@ -961,7 +967,7 @@ describe('ContratacionService.sendProposal()', () => {
     await expect(
       service.sendProposal(
         'contratacion-uuid-1',
-        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+        { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
         ParticipantRole.PRESTADOR,
       ),
@@ -990,7 +996,7 @@ describe('ContratacionService.sendProposal()', () => {
     await expect(
       service.sendProposal(
         'contratacion-uuid-1',
-        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 0 },
+        { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 0 },
         'prestador-uuid-1',
         ParticipantRole.PRESTADOR,
       ),
@@ -1003,7 +1009,7 @@ describe('ContratacionService.sendProposal()', () => {
     await expect(
       service.sendProposal(
         'nonexistent-id',
-        { fecha: '2026-06-20', franja: '10:00-11:00', precioEstimado: 150 },
+        { fecha: FECHA_FUTURA, franja: '10:00-11:00', precioEstimado: 150 },
         'prestador-uuid-1',
         ParticipantRole.PRESTADOR,
       ),

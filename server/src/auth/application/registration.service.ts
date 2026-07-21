@@ -5,7 +5,7 @@ import {
   Logger,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { DataSource, QueryRunner } from 'typeorm';
+import { DataSource } from 'typeorm';
 import * as argon2 from 'argon2';
 import { RegisterDto } from '../dto/register.dto.js';
 import { RegisterResponseDto } from '../dto/register-response.dto.js';

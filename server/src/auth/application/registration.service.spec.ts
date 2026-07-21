@@ -19,7 +19,6 @@ import type { RegulatedTrade } from '../domain/regulated-trade.entity.js';
 import type { IUserRepository } from '../ports/user.repository.port.js';
 import type { IRegulatedTradeRepository } from '../ports/regulated-trade.repository.port.js';
 import type { IPrestadorRepository } from '../ports/prestador-repository.port.js';
-import { DataSource } from 'typeorm';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -105,7 +104,14 @@ function makeMocks() {
     dataSource,
   );
 
-  return { service, userRepo, regulatedTradeRepo, prestadorRepo, dataSource, mockQueryRunner };
+  return {
+    service,
+    userRepo,
+    regulatedTradeRepo,
+    prestadorRepo,
+    dataSource,
+    mockQueryRunner,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,7 +192,8 @@ describe('RegistrationService.register()', () => {
 
   // ESC-03: prestador + regulated trade → pendiente_habilitacion
   it('ESC-03: prestador + regulated trade → providerStatus=pendiente_habilitacion', async () => {
-    const { service, userRepo, regulatedTradeRepo, prestadorRepo } = makeMocks();
+    const { service, userRepo, regulatedTradeRepo, prestadorRepo } =
+      makeMocks();
     userRepo.findByEmail.mockResolvedValue(null);
     regulatedTradeRepo.findByTradeName.mockResolvedValue(makeRegulatedTrade()); // IS regulated
     const createdUser = makeUser({

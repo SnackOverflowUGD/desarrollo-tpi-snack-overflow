@@ -91,7 +91,7 @@ export function LoginForm({ next }: { next?: string }) {
       setSubmitted(true);
       refresh();
       await new Promise((r) => setTimeout(r, 80));
-      window.location.href = safeRedirectTarget(next);
+      window.location.assign(safeRedirectTarget(next));
       return;
     }
 

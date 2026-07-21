@@ -11,10 +11,7 @@
  *  - invalid price range (min>max) → 400 (ESC-PSM-10).
  *  - ownership guard → 404 on another prestador's servicio (ESC-PSM-14/16).
  */
-import {
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrestadorAutogestionService } from './prestador-autogestion.service.js';
 import { Prestador } from '../domain/prestador.entity.js';
 import { Servicio } from '../domain/servicio.entity.js';
@@ -135,6 +132,57 @@ describe('PrestadorAutogestionService — publishing recompute', () => {
     expect(qr.rollbackTransaction).not.toHaveBeenCalled();
   });
 
+  it('actualizarServicio patches every field, updates in-tx and recomputes the publish flag', async () => {
+    const { service, prestadorRepo, servicioRepo, qr } = setup();
+    servicioRepo.findById.mockResolvedValue(makeServicio({ id: 's1' }));
+    servicioRepo.countVisibleByPrestadorId.mockResolvedValue(1);
+
+    const result = await service.actualizarServicio(SUB, 's1', {
+      categoria: 'Plomero',
+      descripcion: 'Nueva desc',
+      rangoPrecioMin: 2000,
+      rangoPrecioMax: 8000,
+      visible: false,
+    });
+
+    // Ownership resolved before opening the transaction.
+    expect(servicioRepo.findById).toHaveBeenCalledWith('s1');
+    // Every provided field is present in the patch, applied inside the qr tx.
+    expect(servicioRepo.update).toHaveBeenCalledWith(
+      's1',
+      {
+        categoria: 'Plomero',
+        descripcion: 'Nueva desc',
+        rangoPrecioMin: 2000,
+        rangoPrecioMax: 8000,
+        visible: false,
+      },
+      qr,
+    );
+    // Publish flag recomputed atomically with the mutation.
+    expect(servicioRepo.countVisibleByPrestadorId).toHaveBeenCalledWith(
+      SUB,
+      qr,
+    );
+    expect(prestadorRepo.update).toHaveBeenCalledWith(
+      SUB,
+      { tieneServiciosPublicados: true },
+      qr,
+    );
+    expect(qr.commitTransaction).toHaveBeenCalledTimes(1);
+    expect(qr.rollbackTransaction).not.toHaveBeenCalled();
+
+    // Returned DTO mirrors the updated servicio.
+    expect(result).toEqual({
+      id: 's1',
+      categoria: 'Plomero',
+      descripcion: 'Nueva desc',
+      rangoPrecioMin: 2000,
+      rangoPrecioMax: 8000,
+      visible: false,
+    });
+  });
+
   it('ESC-PSM-12/15: soft-deleting the last visible servicio flips tieneServiciosPublicados=false', async () => {
     const { service, prestadorRepo, servicioRepo, qr } = setup();
     servicioRepo.findById.mockResolvedValue(makeServicio({ id: 's1' }));
@@ -150,6 +198,28 @@ describe('PrestadorAutogestionService — publishing recompute', () => {
       qr,
     );
     expect(qr.commitTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('crearServicio applies null/true defaults when optional fields are omitted', async () => {
+    const { service, servicioRepo, qr } = setup();
+    servicioRepo.countVisibleByPrestadorId.mockResolvedValue(1);
+
+    await service.crearServicio(SUB, {
+      categoria: 'Electricista',
+      descripcion: 'Instalaciones',
+    });
+
+    expect(servicioRepo.create).toHaveBeenCalledWith(
+      {
+        prestadorId: SUB,
+        categoria: 'Electricista',
+        descripcion: 'Instalaciones',
+        rangoPrecioMin: null,
+        rangoPrecioMax: null,
+        visible: true,
+      },
+      qr,
+    );
   });
 
   it('rolls back the transaction when a servicio mutation fails', async () => {
@@ -234,6 +304,34 @@ describe('PrestadorAutogestionService — profile update', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(prestadorRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('actualizarPerfil throws 404 when the prestador does not exist', async () => {
+    const { service, prestadorRepo } = setup();
+    prestadorRepo.findById.mockResolvedValue(null);
+
+    await expect(
+      service.actualizarPerfil(SUB, { visible: false }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    expect(prestadorRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('applies categoria and disponibilidadResumen into the patch when provided', async () => {
+    const { service, prestadorRepo } = setup();
+    prestadorRepo.findById.mockResolvedValue(
+      makePrestador({ localidad: 'Posadas' }),
+    );
+
+    await service.actualizarPerfil(SUB, {
+      categoria: 'Plomero',
+      disponibilidadResumen: 'Lun a Vie 9-18',
+    });
+
+    const [id, patch] = prestadorRepo.update.mock.calls[0];
+    expect(id).toBe(SUB);
+    expect(patch.categoria).toBe('Plomero');
+    expect(patch.disponibilidadResumen).toBe('Lun a Vie 9-18');
   });
 });
 
